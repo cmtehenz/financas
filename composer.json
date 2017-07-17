@@ -1,0 +1,15 @@
+{
+    "name": "son/financas",
+    "authors": [
+        {
+            "name": "Gustavo Costa",
+            "email": "cmtehenz@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload":{
+        "psr-4":{
+            "SONFin\\": "src/"
+        }
+    }
+}
