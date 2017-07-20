@@ -15,6 +15,7 @@ use SONFin\Plugins\PluginInterface;
 use Zend\Diactoros\Response\RedirectResponse;
 use Zend\Diactoros\Response\SapiEmitter;
 
+
 class Application
 {
     private $serviceContainer;
@@ -87,6 +88,11 @@ class Application
     protected function emitResponse(ResponseInterface $response){
         $emitter = new SapiEmitter();
         $emitter->emit($response);
+    }
+
+    public function redirect($path)
+    {
+        return new RedirectResponse($path);
     }
 
 }

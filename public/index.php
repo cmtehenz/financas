@@ -29,19 +29,19 @@ $app
     ->get('/category-costs', function() use($app){
         $meuModel = new CategoryCost();
         $categories = $meuModel->all();
-        $view = $app->service('view.renderer');
+        $view = $app->service('View.renderer');
         return $view->render('category-costs/list.html.twig',[
             'categories' => $categories
         ]);
     })
     ->get('/category-costs/new', function() use($app){
-        $view = $app->service('view.renderer');
+        $view = $app->service('View.renderer');
         return $view->render('category-costs/create.html.twig');
-    })
-    ->post('/category-costs/store', function(ServerRequestInterface $request){
+    },'category-costs.new')
+    ->post('/category-costs/store', function(ServerRequestInterface $request) use($app){
         $data = $request->getParsedBody();
-        SONFin\Models\CategoryCost::create($data);
-        return new \Zend\Diactoros\Response\RedirectResponse('/category-costs');
-    });
+        CategoryCost::create($data);
+        return $app->redirect('/category-costs');
+    }, 'category-costs.store');
 
 $app->start();
