@@ -8,6 +8,9 @@
 declare(strict_types = 1);
 namespace SONFin;
 
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use SONFin\Plugins\PluginInterface;
 
 class Application
@@ -52,7 +55,19 @@ class Application
     public function start(){
         $route = $this->service('route');
 
+        /** @var ServerRequestInterface $request */
+        $request = $this->service(RequestInterface::class);
+
+        if(!$route){
+            echo "Pagina não encontrada !!";
+            exit;
+        }
+
+        foreach ($route->attributes as $key => $value){
+            $request = $request->withAttribute($key,$value);
+        }
+
         $callable = $route->handler;
-        $callable();
+        $callable($request);
     }
 }
