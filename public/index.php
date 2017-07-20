@@ -5,6 +5,7 @@ use SONFin\Plugins\RoutePlugin;
 use SONFin\Plugins\ViewPlugin;
 use SONFin\ServiceContainer;
 use SONFin\Plugins\DbPlugin;
+use SONFin\Models\CategoryCost;
 use Psr\Http\Message\ServerRequestInterface;
 
 
@@ -23,10 +24,16 @@ $app->get('/home/{name}/{id}', function(ServerRequestInterface $request){
     return $response;
 });
 
+$meuModel = new \SONFin\Models\CategoryCost();
+
 
 $app->get('/category-costs', function() use($app){
+    $meuModel = new CategoryCost();
+    $categories = $meuModel->all();
     $view = $app->service('view.renderer');
-    return $view->render('category-costs/list.html.twig');
+    return $view->render('category-costs/list.html.twig',[
+        'categories' => $categories
+    ]);
 });
 
 $app->get('/home', function() {

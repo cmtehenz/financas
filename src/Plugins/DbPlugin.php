@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 namespace SONFin\Plugins;
 
-use Interop\Container\ContainerInterface;
 use SONFin\ServiceContainerInterface;
-use Illuminate\Database\Capsule\Manager as Capsula;
+use Illuminate\Database\Capsule\Manager as Capsule;
 
 
 class DbPlugin implements PluginInterface
