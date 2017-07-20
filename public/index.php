@@ -20,9 +20,10 @@ $app->get('/home/{name}/{id}', function(ServerRequestInterface $request){
     return $response;
 });
 
-$app->get('/{name}', function(ServerRequestInterface $request) use($app){
+
+$app->get('/category-costs', function() use($app){
     $view = $app->service('view.renderer');
-    return $view->render('test.html.twig', ['name' => $request->getAttribute('name')]);
+    return $view->render('category-costs/list.html.twig');
 });
 
 $app->get('/home', function() {
