@@ -24,20 +24,24 @@ $app->get('/home/{name}/{id}', function(ServerRequestInterface $request){
     return $response;
 });
 
-$meuModel = new \SONFin\Models\CategoryCost();
 
-
-$app->get('/category-costs', function() use($app){
-    $meuModel = new CategoryCost();
-    $categories = $meuModel->all();
-    $view = $app->service('view.renderer');
-    return $view->render('category-costs/list.html.twig',[
-        'categories' => $categories
-    ]);
-});
-
-$app->get('/home', function() {
-    echo "Mostrando a home!!";
-});
+$app
+    ->get('/category-costs', function() use($app){
+        $meuModel = new CategoryCost();
+        $categories = $meuModel->all();
+        $view = $app->service('view.renderer');
+        return $view->render('category-costs/list.html.twig',[
+            'categories' => $categories
+        ]);
+    })
+    ->get('/category-costs/new', function() use($app){
+        $view = $app->service('view.renderer');
+        return $view->render('category-costs/create.html.twig');
+    })
+    ->post('/category-costs/store', function(ServerRequestInterface $request){
+        $data = $request->getParsedBody();
+        SONFin\Models\CategoryCost::create($data);
+        return new \Zend\Diactoros\Response\RedirectResponse('/category-costs');
+    });
 
 $app->start();
