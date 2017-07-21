@@ -95,4 +95,11 @@ class Application
         return new RedirectResponse($path);
     }
 
+    public function route(string $name, array $params = [])
+    {
+        $generator = $this->service('routing.generator');
+        $path = $generator->generate($name, $params);
+        return $this->redirect($path);
+    }
+
 }

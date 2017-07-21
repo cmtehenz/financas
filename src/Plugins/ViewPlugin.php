@@ -25,7 +25,7 @@ class ViewPlugin implements PluginInterface
             return $twig;
         });
 
-        $container->addLazy('View.renderer', function (ContainerInterface $container) {
+        $container->addLazy('view.renderer', function (ContainerInterface $container) {
             $twigEnviroment = $container->get('twig');
             return new ViewRenderer($twigEnviroment);
         });
