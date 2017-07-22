@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Gustavo Costa
- * Date: 21/07/2017
- * Time: 19:12
- */
+declare(strict_types = 1);
 
 namespace SONFin\Auth;
 
@@ -17,4 +12,5 @@ interface AuthInterface
 
     public function logout(): void;
 
+    public function hashPassword(string $password): string;
 }
