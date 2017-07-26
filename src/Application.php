@@ -104,4 +104,5 @@ class Application
         $emitter = new SapiEmitter();
         $emitter->emit($response);
     }
+
 }
