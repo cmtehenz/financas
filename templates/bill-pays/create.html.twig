@@ -6,13 +6,13 @@
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title">
-                        Nova Conta a receber
+                        Nova conta a receber
                     </h3>
                 </div>
                 <div class="panel-body">
-                    {% set action = route('bill-receives.store') %}
+                    {% set action = route('bill-pays.store') %}
                     {% set submitIcon = 'floppy-disk' %}
-                    {% include 'bill-receives/_form.html.twig' %}
+                    {% include 'bill-pays/_form.html.twig' %}
                 </div>
             </div>
         </div>

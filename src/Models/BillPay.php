@@ -13,4 +13,8 @@ class BillPay extends Model
         'user_id',
         'category_cost_id'
     ];
+
+    public function categoryCost(){
+        return $this->belongsTo(CategoryCost::class);
+    }
 }

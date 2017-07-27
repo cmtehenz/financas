@@ -1,44 +1,128 @@
 <?php
-
-use Phinx\Seed\AbstractSeed;
-
-class BillPaysSeeder extends AbstractSeed
-{
-    /**
-     * @var \Illuminate\Database\Eloquent\Collection
-     */
-    private $categories;
-
-
-    public function run()
-    {
-        require __DIR__ . '/../bootstrap.php';
-        $this->categories = \SONFin\Models\CategoryCost::all();
-
-        $faker = \Faker\Factory::create('pt_BR');
-        $faker->addProvider($this);
-        $billPays = $this->table('bill_pays');
-        $data = [];
-        foreach (range(1, 20) as $value) {
-            $userId = rand(1,4);
-            $data[] = [
-                'date_launch' => $faker->date(),
-                'name' => $faker->word(),
-                'user_id' => rand(1,4),
-                'value' => $faker->randomFloat(2,10,5000),
-                'category_cost_id' => $faker->categoryId($userId),
-                'created_at' => date('Y-m-d H:i:s'),
-                'updated_at' => date('Y-m-d H:i:s')
-            ];
-        }
-        $billPays->insert($data)->save();
-    }
-
-    public function categoryId($userId){
-        $categories = $this->categories->where('user_id', $userId);
-        $categories = $categories->pluck('id');
-        return \Faker\Provider\Base::randomElement($categories->toArray());
-    }
-
-
-}
+use Psr\Http\Message\ServerRequestInterface;
+$app
+    ->get(
+        '/bill-pays', function () use ($app) {
+        $view = $app->service('view.renderer');
+        $repository = $app->service('bill-pay.repository');
+        $auth = $app->service('auth');
+        $bills = $repository->findByField('user_id', $auth->user()->getId());
+        return $view->render(
+            'bill-pays/list.html.twig', [
+                'bills' => $bills
+            ]
+        );
+    }, 'bill-pays.list'
+    )
+    ->get(
+        '/bill-pays/new', function () use ($app) {
+        $view = $app->service('view.renderer');
+        $auth = $app->service('auth');
+        $categoryRepository = $app->service('category-cost.repository');
+        $categories = $categoryRepository->findByField('user_id', $auth->user()->getId());
+        return $view->render(
+            'bill-pays/create.html.twig', [
+                'categories' => $categories
+            ]
+        );
+    }, 'bill-pays.new'
+    )
+    ->post(
+        '/bill-pays/store', function (ServerRequestInterface $request) use ($app) {
+        $data = $request->getParsedBody();
+        $repository = $app->service('bill-pay.repository');
+        $categoryRepository = $app->service('category-cost.repository');
+        $auth = $app->service('auth');
+        $data['user_id'] = $auth->user()->getId();
+        $data['date_launch'] = dateParse($data['date_launch']);
+        $data['value'] = numberParse($data['value']);
+        $data['category_cost_id'] = $categoryRepository->findOneBy(
+            [
+                'id' => $data['category_cost_id'],
+                'user_id' => $auth->user()->getId()
+            ]
+        )->id;
+        $repository->create($data);
+        return $app->route('bill-pays.list');
+    }, 'bill-pays.store'
+    )
+    ->get(
+        '/bill-pays/{id}/edit', function (ServerRequestInterface $request) use ($app) {
+        $view = $app->service('view.renderer');
+        $repository = $app->service('bill-pay.repository');
+        $id = $request->getAttribute('id');
+        $auth = $app->service('auth');
+        $bill = $repository->findOneBy(
+            [
+                'id' => $id,
+                'user_id' => $auth->user()->getId()
+            ]
+        );
+        $categoryRepository = $app->service('category-cost.repository');
+        $categories = $categoryRepository->findByField('user_id', $auth->user()->getId());
+        return $view->render(
+            'bill-pays/edit.html.twig', [
+                'bill' => $bill,
+                'categories' => $categories
+            ]
+        );
+    }, 'bill-pays.edit'
+    )
+    ->post(
+        '/bill-pays/{id}/update', function (ServerRequestInterface $request) use ($app) {
+        $repository = $app->service('bill-pay.repository');
+        $categoryRepository = $app->service('category-cost.repository');
+        $id = $request->getAttribute('id');
+        $data = $request->getParsedBody();
+        $auth = $app->service('auth');
+        $data['user_id'] = $auth->user()->getId();
+        $data['date_launch'] = dateParse($data['date_launch']);
+        $data['value'] = numberParse($data['value']);
+        $data['category_cost_id'] = $categoryRepository->findOneBy(
+            [
+                'id' => $data['category_cost_id'],
+                'user_id' => $auth->user()->getId()
+            ]
+        )->id;
+        $repository->update(
+            [
+                'id' => $id,
+                'user_id' => $auth->user()->getId()
+            ], $data
+        );
+        return $app->route('bill-pays.list');
+    }, 'bill-pays.update'
+    )
+    ->get(
+        '/bill-pays/{id}/show', function (ServerRequestInterface $request) use ($app) {
+        $view = $app->service('view.renderer');
+        $repository = $app->service('bill-pay.repository');
+        $id = $request->getAttribute('id');
+        $auth = $app->service('auth');
+        $bill = $repository->findOneBy(
+            [
+                'id' => $id,
+                'user_id' => $auth->user()->getId()
+            ]
+        );
+        return $view->render(
+            'bill-pays/show.html.twig', [
+                'bill' => $bill
+            ]
+        );
+    }, 'bill-pays.show'
+    )
+    ->get(
+        '/bill-pays/{id}/delete', function (ServerRequestInterface $request) use ($app) {
+        $repository = $app->service('bill-pay.repository');
+        $id = $request->getAttribute('id');
+        $auth = $app->service('auth');
+        $repository->delete(
+            [
+                'id' => $id,
+                'user_id' => $auth->user()->getId()
+            ]
+        );
+        return $app->route('bill-pays.list');
+    }, 'bill-pays.delete'
+    );

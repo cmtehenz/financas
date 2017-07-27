@@ -6,17 +6,17 @@
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title">
-                        Ver conta à receber
+                        Ver conta a receber
                     </h3>
                 </div>
                 <div class="panel-body">
                     <div class="row">
                         <div class="col-md-12">
-                            <a href="{{ route('bill-receives.edit',{'id': bill.id}) }}"
+                            <a href="{{ route('bill-pays.edit',{'id': bill.id}) }}"
                                class="btn btn-primary">
                                 <span class="glyphicon glyphicon-pencil"></span>
                             </a>
-                            <a href="{{ route('bill-receives.delete',{'id': bill.id}) }}"
+                            <a href="{{ route('bill-pays.delete',{'id': bill.id}) }}"
                                class="btn btn-danger">
                                 <span class="glyphicon glyphicon-remove"></span>
                             </a>
@@ -32,16 +32,20 @@
                                     <td>{{ bill.id }}</td>
                                 </tr>
                                 <tr>
-                                    <th scope="row">Data Lançamento</th>
+                                    <th scope="row">Categoria de Custo</th>
+                                    <td>{{ bill.categoryCost.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Data Lanc.</th>
                                     <td>{{ bill.date_launch | date('d/m/Y') }}</td>
                                 </tr>
                                 <tr>
-                                    <th scope="row">Descrição</th>
+                                    <th scope="row">Nome</th>
                                     <td>{{ bill.name }}</td>
                                 </tr>
                                 <tr>
                                     <th scope="row">Valor</th>
-                                    <td>R$ {{ bill.value | number_format(2, ',', '.') }}</td>
+                                    <td>{{ bill.value | number_format(2,',','.') }}</td>
                                 </tr>
                                 </tbody>
                             </table>
