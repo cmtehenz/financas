@@ -1,8 +1,8 @@
-import { getDb, type AppDatabase } from "@/db";
+import { getDb, type DbClient } from "@/db";
 import { auditEvents } from "@/db/schema";
 import { createId } from "@/lib/ids";
 
-type Db = AppDatabase;
+type Db = DbClient;
 
 export async function recordAudit(
   input: {

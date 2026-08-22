@@ -1,4 +1,4 @@
-import { AppHeader } from "@/features/app/app-header";
+import { AppBottomNav, AppHeader, AppSidebar } from "@/features/app/app-header";
 import { getActiveHousehold } from "@/lib/require-household";
 import { requireSession } from "@/lib/require-session";
 
@@ -11,8 +11,12 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <AppHeader householdName={active?.household.name} showNav={completed} />
-      {children}
+      <AppHeader householdName={active?.household.name} />
+      <div className="flex flex-1">
+        {completed ? <AppSidebar /> : null}
+        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      </div>
+      {completed ? <AppBottomNav /> : null}
     </div>
   );
 }

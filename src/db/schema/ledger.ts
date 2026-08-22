@@ -74,6 +74,7 @@ export const transactions = pgTable(
     status: text("status").notNull(),
     visibility: text("visibility").notNull().default("HOUSEHOLD"),
     origin: text("origin").notNull().default("MANUAL"),
+    budgetImpact: boolean("budget_impact").notNull().default(true),
     transactionDate: date("transaction_date", { mode: "string" }).notNull(),
     dueDate: date("due_date", { mode: "string" }),
     paidAt: timestamp("paid_at"),

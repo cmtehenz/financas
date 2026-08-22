@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 
-import { getDb, type AppDatabase } from "@/db";
+import { getDb, type DbClient } from "@/db";
 import { categories, financialAccounts, householdMembers, transactions } from "@/db/schema";
 import { normalizeDescription } from "@/domain/transaction-types";
 import { dateInSaoPaulo } from "@/lib/dates";
@@ -10,7 +10,7 @@ import type { Cents } from "@/types/money";
 import { recordAudit } from "./audit";
 import { assertHouseholdAccessForUser } from "./households";
 
-type Db = AppDatabase;
+type Db = DbClient;
 
 export class LedgerError extends Error {
   constructor(
@@ -114,11 +114,13 @@ export async function validateLedgerWrite(
     destinationAccountId?: string | null;
     categoryId?: string | null;
     assignedToUserId?: string | null;
+    origin?: "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT";
   },
   db: Db = getDb(),
 ) {
   assertAmount(input.amountCents);
   const account = await requireActiveAccount(input.householdId, input.accountId, db);
+  const origin = input.origin ?? "MANUAL";
 
   if (input.type === "TRANSFER") {
     if (!input.destinationAccountId || input.destinationAccountId === input.accountId) {
@@ -138,11 +140,15 @@ export async function validateLedgerWrite(
       throw new LedgerError("Somente transferência usa conta de destino.", "TRANSFER_ACCOUNTS");
     }
 
-    if (!input.categoryId) {
+    if (origin === "CARD_PAYMENT") {
+      if (input.categoryId) {
+        throw new LedgerError("Pagamento de fatura não usa categoria de orçamento.", "CATEGORY_MISMATCH");
+      }
+    } else if (!input.categoryId) {
       throw new LedgerError("Receita e despesa exigem categoria.", "CATEGORY_REQUIRED");
+    } else {
+      await requireCategory(input.householdId, input.categoryId, input.type, db);
     }
-
-    await requireCategory(input.householdId, input.categoryId, input.type, db);
   }
 
   if (input.assignedToUserId) {
@@ -167,6 +173,8 @@ export async function createTransaction(
     notes?: string | null;
     recurringRuleId?: string | null;
     recurrenceOccurrenceKey?: string | null;
+    origin?: "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT";
+    budgetImpact?: boolean;
   },
   db: Db = getDb(),
 ) {
@@ -174,7 +182,9 @@ export async function createTransaction(
   const destinationAccountId = input.destinationAccountId || null;
   const categoryId = input.categoryId || null;
   const assignedToUserId = input.assignedToUserId || null;
-  await validateLedgerWrite({ ...input, destinationAccountId, categoryId, assignedToUserId }, db);
+  const origin = input.origin ?? "MANUAL";
+  const budgetImpact = input.budgetImpact ?? origin !== "CARD_PAYMENT";
+  await validateLedgerWrite({ ...input, destinationAccountId, categoryId, assignedToUserId, origin }, db);
 
   const now = new Date();
   const status = input.status;
@@ -194,7 +204,8 @@ export async function createTransaction(
       amountCents: input.amountCents,
       status,
       visibility: "HOUSEHOLD",
-      origin: "MANUAL",
+      origin,
+      budgetImpact,
       transactionDate: input.transactionDate,
       dueDate: input.dueDate || null,
       paidAt: paidAtForStatus(status),

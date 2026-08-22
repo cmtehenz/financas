@@ -40,3 +40,5 @@ export async function closeDb() {
 }
 
 export type AppDatabase = Database;
+export type AppTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+export type DbClient = AppDatabase | AppTransaction;

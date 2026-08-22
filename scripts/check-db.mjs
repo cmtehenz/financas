@@ -9,7 +9,9 @@ const requiredFiles = [
   "drizzle/0001_auth_account_issuer.sql",
   "drizzle/0002_household_onboarding.sql",
   "drizzle/0003_transactions_budget.sql",
+  "drizzle/0004_cards_debts.sql",
   "src/db/schema/ledger.ts",
+  "src/db/schema/cards-debts.ts",
   "drizzle/meta/_journal.json",
 ];
 

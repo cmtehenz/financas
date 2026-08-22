@@ -7,6 +7,15 @@ export {
   households,
 } from "./household";
 export {
+  creditCardInstallments,
+  creditCardPayments,
+  creditCardPurchases,
+  creditCards,
+  creditCardStatements,
+  debtInstallments,
+  debts,
+} from "./cards-debts";
+export {
   auditEvents,
   categoryBudgets,
   monthlyBudgets,

@@ -72,3 +72,16 @@ export function shiftYearMonth(value: string, delta: number) {
   const next = addMonths(parsed.year, parsed.month, delta);
   return yearMonth(next.year, next.month);
 }
+
+export function parseIsoDate(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw new Error("INVALID_DATE");
+  }
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+  };
+}

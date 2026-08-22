@@ -38,9 +38,8 @@ export default async function DashboardPage() {
           {summary.availableLabel}
         </p>
         <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Saldo atual da Casa + receitas pendentes do mês − despesas pendentes do mês −
-          reserva de investimento ainda não lançada. Cartões e dívidas entram nas próximas
-          fases.
+          Saldo atual da Casa + receitas pendentes − despesas pendentes − reserva de
+          investimento − faturas não pagas com vencimento até o fim do mês.
         </p>
       </section>
 
@@ -55,6 +54,28 @@ export default async function DashboardPage() {
           value={`${summary.budgetPercent}%`}
         />
       </section>
+
+      <section className="mt-8 grid gap-3 sm:grid-cols-2">
+        <article className="rounded-2xl border border-border px-5 py-4">
+          <p className="text-sm text-muted-foreground">Faturas a vencer</p>
+          <p className="font-heading mt-1 text-2xl">{formatBRL(summary.unpaidCardStatementsCents)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{summary.statementsThisMonth.length} no mês</p>
+        </article>
+        <article className="rounded-2xl border border-border px-5 py-4">
+          <p className="text-sm text-muted-foreground">Dívidas</p>
+          <p className="font-heading mt-1 text-2xl" data-testid="debt-total">
+            {formatBRL(summary.debtOutstandingCents)}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{summary.debtsThisMonth.length} parcelas no mês</p>
+        </article>
+      </section>
+      {summary.overdueAlerts.length > 0 ? (
+        <p className="mt-4 text-sm">Há fatura ou dívida vencida ⚠</p>
+      ) : null}
+      <p className="mt-3 text-sm text-muted-foreground">
+        Limite usado {formatBRL(summary.cardUsedCents)} · faturas futuras {summary.futureStatements.length} ·
+        maior compromisso {summary.peakCardCommitment ? `${summary.peakCardCommitment.monthKey}` : "—"}
+      </p>
 
       <section className="mt-8 rounded-2xl border border-border bg-card px-5 py-5">
         <h2 className="font-medium">Investimento planejado</h2>

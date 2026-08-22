@@ -30,11 +30,17 @@ export type LedgerTransaction = {
   type: LedgerTransactionType;
   amountCents: Cents;
   status: LedgerTransactionStatus;
+  origin?: "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT";
+  budgetImpact?: boolean;
   transactionDate: string;
   dueDate: string | null;
   paidAt: Date | null;
   deletedAt?: Date | null;
 };
+
+export function countsTowardBudget(transaction: LedgerTransaction) {
+  return transaction.budgetImpact !== false && transaction.origin !== "CARD_PAYMENT";
+}
 
 export function isLedgerActive(transaction: LedgerTransaction) {
   return transaction.status !== "CANCELLED" && !transaction.deletedAt;
@@ -116,12 +122,17 @@ export function sumByTypeThrough(
     throughDate: string;
     statuses: LedgerTransactionStatus[];
     paidAtDate?: (transaction: LedgerTransaction) => string | null;
+    budgetOnly?: boolean;
   },
 ): Cents {
   return addCents(
     ...transactions
       .filter((transaction) => {
         if (transaction.type !== input.type || !isLedgerActive(transaction)) {
+          return false;
+        }
+
+        if (input.type === "EXPENSE" && !countsTowardBudget(transaction) && input.budgetOnly) {
           return false;
         }
 
@@ -152,6 +163,7 @@ export function pendingExpensesThrough(
     type: "EXPENSE",
     throughDate,
     statuses: ["PLANNED", "PENDING"],
+    budgetOnly: true,
   });
 }
 
@@ -225,10 +237,14 @@ export function availableBalance(input: {
   pendingIncomeCents: Cents;
   pendingExpenseCents: Cents;
   investmentReserveCents: Cents;
+  unpaidCardStatementsCents?: Cents;
 }): Cents {
   return subtractCents(
-    subtractCents(addCents(input.currentHouseholdCents, input.pendingIncomeCents), input.pendingExpenseCents),
-    input.investmentReserveCents,
+    subtractCents(
+      subtractCents(addCents(input.currentHouseholdCents, input.pendingIncomeCents), input.pendingExpenseCents),
+      input.investmentReserveCents,
+    ),
+    input.unpaidCardStatementsCents ?? ZERO_CENTS,
   );
 }
 

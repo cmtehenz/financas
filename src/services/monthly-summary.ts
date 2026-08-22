@@ -1,10 +1,9 @@
-import { dateInSaoPaulo, monthEnd, yearMonth } from "@/lib/dates";
-import { addCents, formatBRL } from "@/lib/money";
-import type { Cents } from "@/types/money";
+import { cardBudgetForMonth, monthlyCardCommitments, peakCommitmentMonth } from "@/domain/cards";
 import {
   availableBalance,
   budgetAlertLevel,
   budgetPercent,
+  countsTowardBudget,
   currentAccountBalance,
   currentHouseholdBalance,
   investmentReserve,
@@ -15,10 +14,15 @@ import {
   ZERO_CENTS,
   type LedgerTransaction,
 } from "@/domain/ledger";
+import { dateInSaoPaulo, monthEnd, yearMonth } from "@/lib/dates";
+import { addCents, formatBRL } from "@/lib/money";
+import type { Cents } from "@/types/money";
 
 import { listHouseholdAccounts } from "./accounts";
 import { getMonthlyBudget } from "./budgets";
+import { householdCardState } from "./cards";
 import { listHouseholdCategories } from "./categories";
+import { householdDebtState, pendingDebtThrough } from "./debts";
 import { listHouseholdMembers } from "./households";
 import { hasPendingInvitation, listHouseholdInvitations } from "./invitations";
 import { listAllHouseholdTransactions } from "./transactions";
@@ -34,6 +38,8 @@ function toLedger(transaction: Awaited<ReturnType<typeof listAllHouseholdTransac
     type: transaction.type as LedgerTransaction["type"],
     amountCents: transaction.amountCents,
     status: transaction.status as LedgerTransaction["status"],
+    origin: transaction.origin as LedgerTransaction["origin"],
+    budgetImpact: transaction.budgetImpact,
     transactionDate: transaction.transactionDate,
     dueDate: transaction.dueDate,
     paidAt: transaction.paidAt,
@@ -48,14 +54,17 @@ function paidAtDate(transaction: LedgerTransaction) {
 export async function getMonthlySummary(householdId: string, year: number, month: number) {
   const monthKey = yearMonth(year, month);
   const throughDate = monthEnd(year, month);
-  const [accounts, categories, rawTransactions, members, invitations, budgetState] = await Promise.all([
-    listHouseholdAccounts(householdId),
-    listHouseholdCategories(householdId),
-    listAllHouseholdTransactions(householdId),
-    listHouseholdMembers(householdId),
-    listHouseholdInvitations(householdId),
-    getMonthlyBudget(householdId, year, month),
-  ]);
+  const [accounts, categories, rawTransactions, members, invitations, budgetState, cardState, debtState] =
+    await Promise.all([
+      listHouseholdAccounts(householdId),
+      listHouseholdCategories(householdId),
+      listAllHouseholdTransactions(householdId),
+      listHouseholdMembers(householdId),
+      listHouseholdInvitations(householdId),
+      getMonthlyBudget(householdId, year, month),
+      householdCardState(householdId, throughDate),
+      householdDebtState(householdId),
+    ]);
 
   const ledgerAccounts = accounts.map((account) => ({
     id: account.id,
@@ -80,9 +89,11 @@ export async function getMonthlySummary(householdId: string, year: number, month
     balanceCents: currentAccountBalance(account, txs),
   }));
 
+  const purchaseById = new Map(cardState.purchases.map((item) => [item.id, item]));
   const currentHouseholdCents = currentHouseholdBalance(ledgerAccounts, txs);
   const pendingIncomeCents = pendingIncomeThrough(txs, throughDate);
-  const pendingExpenseCents = pendingExpensesThrough(txs, throughDate);
+  const pendingDebtCents = pendingDebtThrough(debtState.installments, throughDate);
+  const pendingExpenseCents = addCents(pendingExpensesThrough(txs, throughDate), pendingDebtCents);
   const paidIncomeCents = paidInMonth(txs, { type: "INCOME", yearMonth: monthKey, paidAtDate });
   const paidExpenseCents = paidInMonth(txs, { type: "EXPENSE", yearMonth: monthKey, paidAtDate });
   const investment = investmentTotals(txs, ledgerCategories, {
@@ -96,11 +107,13 @@ export async function getMonthlySummary(householdId: string, year: number, month
     realizedCents: investment.realized,
     pendingPostedCents: investment.pendingPosted,
   });
+  const unpaidCardStatementsCents = cardState.unpaidThroughMonthCents;
   const availableCents = availableBalance({
     currentHouseholdCents,
     pendingIncomeCents,
     pendingExpenseCents,
     investmentReserveCents: reserveCents,
+    unpaidCardStatementsCents,
   });
 
   const expenseByCategory = ledgerCategories
@@ -110,6 +123,7 @@ export async function getMonthlySummary(householdId: string, year: number, month
         ...txs
           .filter(
             (transaction) =>
+              countsTowardBudget(transaction) &&
               transaction.categoryId === category.id &&
               transaction.type === "EXPENSE" &&
               transaction.status === "PAID" &&
@@ -120,7 +134,11 @@ export async function getMonthlySummary(householdId: string, year: number, month
       const committed = addCents(
         ...txs
           .filter((transaction) => {
-            if (transaction.categoryId !== category.id || transaction.type !== "EXPENSE") {
+            if (
+              !countsTowardBudget(transaction) ||
+              transaction.categoryId !== category.id ||
+              transaction.type !== "EXPENSE"
+            ) {
               return false;
             }
 
@@ -132,6 +150,28 @@ export async function getMonthlySummary(householdId: string, year: number, month
             return date.startsWith(monthKey);
           })
           .map((transaction) => transaction.amountCents),
+        cardBudgetForMonth(
+          cardState.installments
+            .filter((item) => purchaseById.get(item.purchaseId)?.categoryId === category.id)
+            .map((item) => ({
+              amountCents: item.amountCents,
+              referenceYear: item.referenceYear,
+              referenceMonth: item.referenceMonth,
+              purchaseActive: purchaseById.get(item.purchaseId)?.status === "ACTIVE",
+            })),
+          year,
+          month,
+        ),
+        ...debtState.installments
+          .filter((item) => {
+            const debt = debtState.debts.find((row) => row.id === item.debtId);
+            return (
+              debt?.categoryId === category.id &&
+              (item.status === "PENDING" || item.status === "OVERDUE") &&
+              item.dueDate.startsWith(monthKey)
+            );
+          })
+          .map((item) => item.amountCents),
       );
       const used = addCents(realized, committed);
       const limit = budgetState.limits.find((item) => item.categoryId === category.id)?.limitCents ?? ZERO_CENTS;
@@ -171,6 +211,32 @@ export async function getMonthlySummary(householdId: string, year: number, month
 
   const budgetUsedCents = addCents(...expenseByCategory.map((item) => item.usedCents));
   const budgetLimitCents = addCents(...expenseByCategory.map((item) => item.limitCents));
+  const today = dateInSaoPaulo(new Date());
+  const statementsThisMonth = cardState.statements.filter((item) => item.dueDate.startsWith(monthKey));
+  const futureStatements = cardState.statements.filter((item) => item.dueDate > throughDate);
+  const debtsThisMonth = debtState.installments.filter(
+    (item) =>
+      (item.status === "PENDING" || item.status === "OVERDUE") && item.dueDate.startsWith(monthKey),
+  );
+  const overdueAlerts = [
+    ...cardState.statements
+      .filter((item) => item.pendingCents > ZERO_CENTS && item.dueDate < today)
+      .map((item) => ({ kind: "statement" as const, id: item.id, dueDate: item.dueDate, amountCents: item.pendingCents })),
+    ...debtState.installments
+      .filter((item) => item.status === "OVERDUE" || (item.status === "PENDING" && item.dueDate < today))
+      .map((item) => ({ kind: "debt" as const, id: item.id, dueDate: item.dueDate, amountCents: item.amountCents })),
+  ];
+  const cardCommitments = monthlyCardCommitments(
+    cardState.installments.map((item) => ({
+      amountCents: item.amountCents,
+      referenceYear: item.referenceYear,
+      referenceMonth: item.referenceMonth,
+      purchaseActive: purchaseById.get(item.purchaseId)?.status === "ACTIVE",
+    })),
+    year,
+    month,
+    12,
+  );
 
   return {
     year,
@@ -203,6 +269,17 @@ export async function getMonthlySummary(householdId: string, year: number, month
     budget: budgetState.budget,
     categories,
     accounts,
+    unpaidCardStatementsCents,
+    pendingDebtCents,
+    cardUsedCents: cardState.usedCents,
+    cardAvailableLimitCents: cardState.availableLimitCents,
+    statementsThisMonth,
+    futureStatements,
+    debtsThisMonth,
+    debtOutstandingCents: debtState.outstandingCents,
+    cardCommitments,
+    peakCardCommitment: peakCommitmentMonth(cardCommitments),
+    overdueAlerts,
   };
 }
 

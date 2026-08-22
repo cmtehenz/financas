@@ -1,13 +1,13 @@
 import { and, count, eq, sql } from "drizzle-orm";
 
-import { getDb, type AppDatabase } from "@/db";
+import { getDb, type DbClient } from "@/db";
 import { categories, financialAccounts, householdMembers, households } from "@/db/schema";
 import { user } from "@/db/schema/auth";
 import { SEED_CATEGORIES } from "@/domain/seed-categories";
 import { ForbiddenError, assertHouseholdAccess, assertHouseholdOwner } from "@/lib/access";
 import { createId, isUuid } from "@/lib/ids";
 
-type Db = AppDatabase;
+type Db = DbClient;
 
 export type HouseholdRole = "OWNER" | "MEMBER";
 

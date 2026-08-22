@@ -5,6 +5,9 @@ import { getSafeInternalPath } from "@/lib/safe-redirect";
 describe("getSafeInternalPath", () => {
   it("accepts known internal destinations", () => {
     expect(getSafeInternalPath("/dashboard")).toBe("/dashboard");
+    expect(getSafeInternalPath("/cartoes")).toBe("/cartoes");
+    expect(getSafeInternalPath("/cartoes/novo")).toBe("/cartoes/novo");
+    expect(getSafeInternalPath("/dividas/nova")).toBe("/dividas/nova");
     expect(getSafeInternalPath("/onboarding/contas")).toBe("/onboarding/contas");
     expect(getSafeInternalPath("/convite/abcdefghijklmnopqrstuvwxyz012345")).toBe(
       "/convite/abcdefghijklmnopqrstuvwxyz012345",
