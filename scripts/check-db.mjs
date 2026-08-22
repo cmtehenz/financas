@@ -8,6 +8,8 @@ const requiredFiles = [
   "drizzle/0000_better_auth.sql",
   "drizzle/0001_auth_account_issuer.sql",
   "drizzle/0002_household_onboarding.sql",
+  "drizzle/0003_transactions_budget.sql",
+  "src/db/schema/ledger.ts",
   "drizzle/meta/_journal.json",
 ];
 

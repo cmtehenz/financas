@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { FINANCIAL_ACCOUNT_TYPE_LABELS, type FinancialAccountType } from "@/domain/account-types";
+import { CategoryForm, DeactivateCategoryButton } from "@/features/household/category-form";
 import { DeactivateAccountButton } from "@/features/household/deactivate-account-button";
 import { UpdateHouseholdForm } from "@/features/household/update-household-form";
 import { AccountForm } from "@/features/onboarding/account-form";
@@ -9,6 +10,7 @@ import { todayInSaoPaulo } from "@/lib/dates";
 import { formatBRL, formatCentsInput } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
 import { listHouseholdAccounts } from "@/services/accounts";
+import { listHouseholdCategories } from "@/services/categories";
 import { listHouseholdMembers } from "@/services/households";
 import { listHouseholdInvitations } from "@/services/invitations";
 
@@ -19,10 +21,11 @@ export const metadata: Metadata = {
 export default async function SettingsPage() {
   const { household, membership } = await requireCompletedHousehold();
   const isOwner = membership.role === "OWNER";
-  const [accounts, members, invitations] = await Promise.all([
+  const [accounts, members, invitations, categoryRows] = await Promise.all([
     listHouseholdAccounts(household.id),
     listHouseholdMembers(household.id),
     listHouseholdInvitations(household.id),
+    listHouseholdCategories(household.id),
   ]);
   const pendingInvites = invitations.filter(
     (invitation) => !invitation.acceptedAt && !invitation.revokedAt && invitation.expiresAt > new Date(),
@@ -126,6 +129,25 @@ export default async function SettingsPage() {
             </div>
           </div>
         ) : null}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-medium">Categorias</h2>
+        <ul className="space-y-2">
+          {categoryRows.map((category) => (
+            <li key={category.id} className="flex items-center justify-between gap-3 rounded-2xl border border-border px-4 py-3">
+              <div>
+                <p className="font-medium">{category.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {category.type === "INCOME" ? "Receita" : "Despesa"} · {category.kind}
+                  {category.active ? "" : " · desativada"}
+                </p>
+              </div>
+              {category.active ? <DeactivateCategoryButton categoryId={category.id} /> : null}
+            </li>
+          ))}
+        </ul>
+        <CategoryForm />
       </section>
     </div>
   );

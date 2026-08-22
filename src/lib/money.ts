@@ -40,6 +40,10 @@ export function subtractCents(minuend: Cents, subtrahend: Cents): Cents {
   return minuend - subtrahend;
 }
 
+export function maxCents(left: Cents, right: Cents): Cents {
+  return left > right ? left : right;
+}
+
 export function formatBRL(cents: Cents): string {
   const negative = cents < ZERO;
   const absolute = negative ? -cents : cents;

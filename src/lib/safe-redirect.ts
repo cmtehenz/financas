@@ -1,7 +1,7 @@
 const FALLBACK = "/dashboard";
 
 const ALLOWED_PATH =
-  /^\/(dashboard|onboarding(?:\/(?:contas|convite|revisao))?|configuracoes|convite\/[A-Za-z0-9_-]{16,})(?:\/)?$/;
+  /^\/(dashboard|onboarding(?:\/(?:contas|convite|revisao))?|configuracoes|movimentacoes(?:\/[A-Za-z0-9_-]+)?|orcamento|convite\/[A-Za-z0-9_-]{16,})(?:\/)?$/;
 
 export function getSafeInternalPath(
   value: string | null | undefined,
