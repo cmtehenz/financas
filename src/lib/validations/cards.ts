@@ -68,6 +68,23 @@ export const cardPaymentSchema = cardPaymentFormSchema.transform((values) => ({
   amountCents: toCents(values.amount),
 }));
 
+export const updateCreditCardSchema = z.object({
+  creditCardId: z.string().uuid(),
+  name: z.string().trim().min(2, "Informe o nome.").max(80),
+  issuer: z.string().trim().min(2, "Informe a bandeira ou o banco.").max(80),
+  limit: moneyInput,
+  closingDay: z.coerce.number().int().min(1).max(31),
+  dueDay: z.coerce.number().int().min(1).max(31),
+}).transform((values) => ({
+  ...values,
+  limitCents: toCents(values.limit),
+}));
+
+export const cardActiveSchema = z.object({
+  creditCardId: z.string().uuid(),
+  active: z.boolean(),
+});
+
 export const cancelPurchaseSchema = z.object({
   purchaseId: z.string().uuid(),
 });

@@ -46,17 +46,19 @@ function createAuth() {
         maxAge: 60 * 5,
       },
     },
+    // In-memory Better Auth limiter. It is not shared across Vercel instances.
     rateLimit: {
       enabled: true,
       window: 60,
       max: 10,
     },
     advanced: {
-      useSecureCookies: process.env.NODE_ENV === "production",
+      useSecureCookies: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
       defaultCookieAttributes: {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: process.env.NODE_ENV === "production" || process.env.VERCEL === "1",
+        path: "/",
       },
     },
     plugins: [nextCookies()],

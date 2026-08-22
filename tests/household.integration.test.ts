@@ -2,6 +2,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { closeDb, getDb } from "@/db";
+import { requireTestDatabaseUrl } from "@/lib/test-database";
 import { householdInvitations, householdMembers, households } from "@/db/schema";
 import { user } from "@/db/schema/auth";
 import { SEED_CATEGORIES } from "@/domain/seed-categories";
@@ -21,7 +22,12 @@ import {
   revokeHouseholdInvitation,
 } from "@/services/invitations";
 
-const db = getDb();
+const canWrite = Boolean(process.env.TEST_DATABASE_URL);
+if (canWrite) {
+  requireTestDatabaseUrl();
+}
+
+const db = canWrite ? getDb() : null!;
 const createdUserIds: string[] = [];
 const createdHouseholdIds: string[] = [];
 
@@ -38,7 +44,7 @@ async function insertUser(name: string) {
   return { id, email, name };
 }
 
-describe.sequential("household isolation", { timeout: 30_000 }, () => {
+describe.skipIf(!canWrite).sequential("household isolation", { timeout: 30_000 }, () => {
   afterAll(async () => {
     if (createdHouseholdIds.length > 0) {
       await db.delete(households).where(inArray(households.id, createdHouseholdIds));

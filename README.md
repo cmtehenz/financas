@@ -19,11 +19,34 @@ cp .env.example .env.local
 
 Preencha no `.env.local`:
 
-- `DATABASE_URL` — connection string do Neon
+- `DATABASE_URL` — connection string do Neon de desenvolvimento
 - `BETTER_AUTH_SECRET` — string aleatória com pelo menos 32 caracteres
 - `BETTER_AUTH_URL` e `NEXT_PUBLIC_APP_URL` — `http://localhost:3000` no desenvolvimento
+- `TEST_DATABASE_URL` e `TEST_DATABASE_BRANCH=test` — branch Neon isolada para Vitest de escrita e Playwright
 
 `OPENAI_API_KEY` e `OPENAI_MODEL` são opcionais. Sem a chave, o restante do app continua funcionando e o assistente fica desativado.
+
+## Ambientes
+
+| Contexto | Banco | URL |
+| --- | --- | --- |
+| Desenvolvimento | branch Neon de desenvolvimento | `http://localhost:3000` |
+| Testes automatizados | branch Neon `test` via `TEST_DATABASE_URL` | Playwright em `localhost:3100` |
+| Preview | branch Neon `preview` (recomendada) | URL da Vercel Preview |
+| Produção | branch principal, só após homologação | domínio definitivo |
+
+Para criar a branch de testes no Neon:
+
+```bash
+# No console ou via CLI, a partir da branch principal
+# Nome obrigatório: test ou preview
+# Copie a connection string para TEST_DATABASE_URL
+# Defina TEST_DATABASE_BRANCH=test
+```
+
+Os testes que gravam no banco recusam `DATABASE_URL` de produção. Sem `TEST_DATABASE_URL` identificada como `test` ou `preview`, a integração é ignorada e o Playwright falha com mensagem explícita.
+
+O rate limit do Better Auth é em memória e não é compartilhado entre instâncias da Vercel.
 
 ```bash
 pnpm db:migrate

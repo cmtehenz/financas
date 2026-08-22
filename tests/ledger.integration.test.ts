@@ -2,6 +2,7 @@ import { inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { closeDb, getDb } from "@/db";
+import { requireTestDatabaseUrl } from "@/lib/test-database";
 import { households } from "@/db/schema";
 import { user } from "@/db/schema/auth";
 import { ForbiddenError } from "@/lib/access";
@@ -17,7 +18,12 @@ import {
 } from "@/services/transactions";
 import { currentAccountBalance, currentHouseholdBalance } from "@/domain/ledger";
 
-const db = getDb();
+const canWrite = Boolean(process.env.TEST_DATABASE_URL);
+if (canWrite) {
+  requireTestDatabaseUrl();
+}
+
+const db = canWrite ? getDb() : null!;
 const createdUserIds: string[] = [];
 const createdHouseholdIds: string[] = [];
 
@@ -29,7 +35,7 @@ async function insertUser(name: string) {
   return { id, email, name };
 }
 
-describe.sequential("ledger isolation", { timeout: 30_000 }, () => {
+describe.skipIf(!canWrite).sequential("ledger isolation", { timeout: 30_000 }, () => {
   afterAll(async () => {
     if (createdHouseholdIds.length > 0) {
       await db.delete(households).where(inArray(households.id, createdHouseholdIds));

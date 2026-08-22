@@ -134,6 +134,80 @@ export async function createCreditCard(
   return card;
 }
 
+export async function updateCreditCard(
+  input: {
+    userId: string;
+    householdId: string;
+    creditCardId: string;
+    name: string;
+    issuer: string;
+    limitCents: Cents;
+    closingDay: number;
+    dueDay: number;
+  },
+  db: Db = getDb(),
+) {
+  await assertHouseholdAccessForUser(input.userId, input.householdId, db);
+  const card = await requireCard(input.householdId, input.creditCardId, db);
+  if (input.limitCents <= ZERO_CENTS) {
+    throw new CardError("Informe um limite maior que zero.", "INVALID_CARD");
+  }
+
+  const [updated] = await db
+    .update(creditCards)
+    .set({
+      name: input.name.trim(),
+      issuer: input.issuer.trim(),
+      limitCents: input.limitCents,
+      closingDay: input.closingDay,
+      dueDay: input.dueDay,
+      updatedAt: new Date(),
+    })
+    .where(eq(creditCards.id, card.id))
+    .returning();
+
+  await recordAudit(
+    {
+      householdId: input.householdId,
+      actorUserId: input.userId,
+      action: "card.update",
+      entityType: "credit_card",
+      entityId: card.id,
+      changedFields: ["name", "issuer", "limitCents", "closingDay", "dueDay"],
+    },
+    db,
+  );
+
+  return updated;
+}
+
+export async function setCreditCardActive(
+  input: { userId: string; householdId: string; creditCardId: string; active: boolean },
+  db: Db = getDb(),
+) {
+  await assertHouseholdAccessForUser(input.userId, input.householdId, db);
+  const card = await requireCard(input.householdId, input.creditCardId, db);
+  const [updated] = await db
+    .update(creditCards)
+    .set({ active: input.active, updatedAt: new Date() })
+    .where(eq(creditCards.id, card.id))
+    .returning();
+
+  await recordAudit(
+    {
+      householdId: input.householdId,
+      actorUserId: input.userId,
+      action: input.active ? "card.reactivate" : "card.deactivate",
+      entityType: "credit_card",
+      entityId: card.id,
+      changedFields: ["active"],
+    },
+    db,
+  );
+
+  return updated;
+}
+
 export async function listCreditCards(householdId: string, db: Db = getDb()) {
   return db
     .select()
@@ -589,16 +663,24 @@ export async function householdCardState(householdId: string, throughDate: strin
     return { ...statement, totalCents, paidCents, pendingCents, status };
   });
 
-  const usedItems = installments.map((item) => {
-    const statement = statementViews.find((row) => row.id === item.statementId);
-    return {
-      amountCents: item.amountCents,
-      purchaseActive: purchaseById.get(item.purchaseId)?.status === "ACTIVE",
-      statementPendingCents: statement?.pendingCents ?? ZERO_CENTS,
-    };
-  });
+  const usedByCardId = new Map<string, Cents>();
+  for (const card of cards) {
+    const activeInstallmentCents = addCents(
+      ...installments
+        .filter(
+          (item) =>
+            item.creditCardId === card.id && purchaseById.get(item.purchaseId)?.status === "ACTIVE",
+        )
+        .map((item) => item.amountCents),
+    );
+    const statementIds = new Set(statements.filter((item) => item.creditCardId === card.id).map((item) => item.id));
+    const validPaymentCents = addCents(
+      ...payments.filter((item) => statementIds.has(item.statementId)).map((item) => item.amountCents),
+    );
+    usedByCardId.set(card.id, cardUsedLimitCents(activeInstallmentCents, validPaymentCents));
+  }
 
-  const usedCents = cardUsedLimitCents(usedItems);
+  const usedCents = addCents(...[...usedByCardId.values()]);
   const limitCents = addCents(...cards.filter((card) => card.active).map((card) => card.limitCents));
 
   return {
@@ -608,6 +690,7 @@ export async function householdCardState(householdId: string, throughDate: strin
     statements: statementViews,
     payments,
     usedCents,
+    usedByCardId,
     availableLimitCents: cardAvailableLimitCents(limitCents, usedCents),
     limitCents,
     unpaidThroughMonthCents: unpaidStatementsThrough(statementViews, throughDate),
@@ -624,15 +707,7 @@ export async function cardDetail(householdId: string, creditCardId: string, db: 
   const statements = state.statements.filter((item) => item.creditCardId === card.id);
   const installments = state.installments.filter((item) => item.creditCardId === card.id);
   const purchases = state.purchases.filter((item) => item.creditCardId === card.id && !item.deletedAt);
-  const usedItems = installments.map((item) => {
-    const statement = statements.find((row) => row.id === item.statementId);
-    return {
-      amountCents: item.amountCents,
-      purchaseActive: purchases.find((purchase) => purchase.id === item.purchaseId)?.status === "ACTIVE",
-      statementPendingCents: statement?.pendingCents ?? ZERO_CENTS,
-    };
-  });
-  const usedCents = cardUsedLimitCents(usedItems);
+  const usedCents = state.usedByCardId.get(card.id) ?? ZERO_CENTS;
 
   return {
     card,

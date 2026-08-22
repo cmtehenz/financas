@@ -31,5 +31,8 @@ test("health check does not require OpenAI", async ({ request }) => {
   const body = await response.json();
 
   expect(response.ok()).toBeTruthy();
-  expect(body.checks.ai).toBe("disabled");
+  expect(body.ai).toBe("disabled");
+  expect(body.app).toBe("financeiro-familiar");
+  expect(body.database === "available" || body.database === "unavailable").toBe(true);
+  expect(body).not.toHaveProperty("checks");
 });

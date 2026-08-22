@@ -3,7 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { buttonVariants } from "@/components/ui/button";
-import { CancelPurchaseButton, StatementPaymentForm } from "@/features/cards/card-forms";
+import {
+  CancelPurchaseButton,
+  CardActiveButton,
+  EditCreditCardForm,
+  StatementPaymentForm,
+} from "@/features/cards/card-forms";
 import { monthlyCardCommitments, peakCommitmentMonth } from "@/domain/cards";
 import { formatBRL } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -59,9 +64,13 @@ export default async function CardDetailPage({ params }: { params: Promise<{ id:
               {members.find((member) => member.userId === detail.card.holderUserId)?.name ?? "Titular"}
             </p>
           </div>
-          <Link href={`/cartoes/${detail.card.id}/compras/nova`} className={cn(buttonVariants(), "h-11")}>
-            Nova compra
-          </Link>
+          {detail.card.active ? (
+            <Link href={`/cartoes/${detail.card.id}/compras/nova`} className={cn(buttonVariants(), "h-11")}>
+              Nova compra
+            </Link>
+          ) : (
+            <p className="text-sm text-muted-foreground">Cartão desativado — só consulta.</p>
+          )}
         </header>
 
         <section className="grid gap-3 sm:grid-cols-3">
@@ -70,6 +79,17 @@ export default async function CardDetailPage({ params }: { params: Promise<{ id:
           <Stat label="Disponível" value={formatBRL(detail.availableLimitCents)} testId="card-available" />
         </section>
         {detail.availableLimitCents < BigInt(0) ? <p>Limite ultrapassado ⚠</p> : null}
+        {!detail.card.active ? <p className="text-sm">Este cartão está desativado. O histórico permanece.</p> : null}
+
+        <section className="rounded-2xl border border-border p-4">
+          <h2 className="font-medium">Configurações do cartão</h2>
+          <div className="mt-4">
+            <EditCreditCardForm card={detail.card} />
+          </div>
+          <div className="mt-4">
+            <CardActiveButton creditCardId={detail.card.id} active={detail.card.active} />
+          </div>
+        </section>
         {peak ? (
           <p className="text-sm text-muted-foreground">
             Maior compromisso: {peak.monthKey} · {formatBRL(peak.amountCents)}

@@ -38,8 +38,9 @@ export default async function DashboardPage() {
           {summary.availableLabel}
         </p>
         <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-          Saldo atual da Casa + receitas pendentes − despesas pendentes − reserva de
-          investimento − faturas não pagas com vencimento até o fim do mês.
+          Saldo atual da Casa (caixa já liquidado) + receitas pendentes − despesas
+          pendentes − reserva de investimento − faturas não pagas com vencimento até o
+          fim do mês. Faturas futuras entram só na projeção, não neste número.
         </p>
       </section>
 

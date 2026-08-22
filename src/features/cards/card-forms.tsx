@@ -9,12 +9,14 @@ import {
   createCardPurchaseAction,
   createCreditCardAction,
   payCardStatementAction,
+  setCreditCardActiveAction,
+  updateCreditCardAction,
 } from "@/actions/cards";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { previewCardInstallments } from "@/domain/cards";
-import { formatBRL, toCents } from "@/lib/money";
+import { formatBRL, formatCentsInput, toCents } from "@/lib/money";
 import { createId } from "@/lib/ids";
 
 const selectClassName =
@@ -74,6 +76,94 @@ export function CreditCardForm({
         {pending ? "Salvando..." : "Salvar cartão"}
       </Button>
     </form>
+  );
+}
+
+export function EditCreditCardForm({
+  card,
+}: {
+  card: {
+    id: string;
+    name: string;
+    issuer: string;
+    limitCents: bigint;
+    closingDay: number;
+    dueDay: number;
+  };
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  async function onSubmit(formData: FormData) {
+    setPending(true);
+    try {
+      const result = await updateCreditCardAction({
+        creditCardId: card.id,
+        name: String(formData.get("name") ?? ""),
+        issuer: String(formData.get("issuer") ?? ""),
+        limit: String(formData.get("limit") ?? ""),
+        closingDay: Number(formData.get("closingDay")),
+        dueDay: Number(formData.get("dueDay")),
+      });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Cartão atualizado.");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <form className="space-y-4" action={onSubmit}>
+      <Field id="name" label="Nome" defaultValue={card.name} />
+      <Field id="issuer" label="Emissor" defaultValue={card.issuer} />
+      <Field id="limit" label="Limite" defaultValue={formatCentsInput(card.limitCents)} />
+      <Field id="closingDay" label="Dia de fechamento" type="number" defaultValue={String(card.closingDay)} />
+      <Field id="dueDay" label="Dia de vencimento" type="number" defaultValue={String(card.dueDay)} />
+      <p className="text-sm text-muted-foreground">
+        Fechamento e vencimento novos valem para compras futuras. Faturas já geradas mantêm as datas
+        originais.
+      </p>
+      <Button type="submit" className="h-11" disabled={pending}>
+        {pending ? "Salvando..." : "Salvar alterações"}
+      </Button>
+    </form>
+  );
+}
+
+export function CardActiveButton({ creditCardId, active }: { creditCardId: string; active: boolean }) {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      className="h-11"
+      disabled={pending}
+      onClick={async () => {
+        const message = active
+          ? "Desativar este cartão? O histórico permanece e novas compras serão bloqueadas."
+          : "Reativar este cartão? Ele voltará a aceitar compras.";
+        if (!window.confirm(message)) {
+          return;
+        }
+        setPending(true);
+        const result = await setCreditCardActiveAction({ creditCardId, active: !active });
+        if (!result.ok) {
+          toast.error(result.error);
+        } else {
+          toast.success(active ? "Cartão desativado." : "Cartão reativado.");
+          router.refresh();
+        }
+        setPending(false);
+      }}
+    >
+      {active ? "Desativar cartão" : "Reativar cartão"}
+    </Button>
   );
 }
 

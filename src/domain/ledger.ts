@@ -232,6 +232,20 @@ export function investmentReserve(input: {
   );
 }
 
+/**
+ * Official month-end cash view.
+ *
+ * - `currentHouseholdCents`: saldo atual — paid ledger only (opening + inflows − outflows).
+ * - pending income/expense: fluxo do mês still open in the ledger or debt schedule.
+ * - unpaid card statements due through month end: compromisso da fatura still open.
+ * - future-due statements belong to projeção futura, not this month's available figure.
+ * - `availableBalance`: saldo realmente disponível.
+ *
+ * Paying a statement reduces bank cash and the statement remainder together.
+ * It never re-enters the budget (`budgetImpact = false`). A paid remainder is
+ * not subtracted again. Early payment of a next-month statement lowers cash
+ * now and removes that commitment from the following month; it is not double-counted.
+ */
 export function availableBalance(input: {
   currentHouseholdCents: Cents;
   pendingIncomeCents: Cents;

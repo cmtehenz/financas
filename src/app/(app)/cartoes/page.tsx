@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
-import { cardAvailableLimitCents, cardUsedLimitCents } from "@/domain/cards";
+import { cardAvailableLimitCents } from "@/domain/cards";
 import { todayInSaoPaulo } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -41,23 +41,16 @@ export default async function CardsPage() {
             const holder = members.find((member) => member.userId === card.holderUserId)?.name ?? "Titular";
             const statements = state.statements.filter((item) => item.creditCardId === card.id);
             const current = statements.find((item) => item.status === "OPEN") ?? statements[0];
-            const used = cardUsedLimitCents(
-              state.installments
-                .filter((item) => item.creditCardId === card.id)
-                .map((item) => ({
-                  amountCents: item.amountCents,
-                  purchaseActive:
-                    state.purchases.find((purchase) => purchase.id === item.purchaseId)?.status === "ACTIVE",
-                  statementPendingCents:
-                    statements.find((statement) => statement.id === item.statementId)?.pendingCents ?? BigInt(0),
-                })),
-            );
+            const used = state.usedByCardId.get(card.id) ?? BigInt(0);
             const available = cardAvailableLimitCents(card.limitCents, used);
             return (
               <li key={card.id} className="rounded-2xl border border-border p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">{card.name}</p>
+                    <p className="font-medium">
+                      {card.name}
+                      {card.active ? "" : " · desativado"}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {card.issuer} · {holder}
                       {card.lastFourDigits ? ` · final ${card.lastFourDigits}` : ""}

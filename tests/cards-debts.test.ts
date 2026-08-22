@@ -72,8 +72,20 @@ describe("statement closing calendar", () => {
 
 describe("card limits and budget", () => {
   it("computes used and negative available limits", () => {
-    const used = cardAvailableLimitCents(BigInt(1_000), BigInt(1_200));
-    expect(used).toBe(BigInt(-200));
+    expect(cardAvailableLimitCents(BigInt(1_000), BigInt(1_200))).toBe(BigInt(-200));
+  });
+
+  it("frees used limit proportionally after a partial payment", () => {
+    expect(cardUsedLimitCents(BigInt(400_000), BigInt(100_000))).toBe(BigInt(300_000));
+    expect(cardAvailableLimitCents(BigInt(1_000_000), BigInt(300_000))).toBe(BigInt(700_000));
+  });
+
+  it("frees the full used limit after a total payment", () => {
+    expect(cardUsedLimitCents(BigInt(400_000), BigInt(400_000))).toBe(BigInt(0));
+  });
+
+  it("keeps future installments in used limit after paying only the current statement", () => {
+    expect(cardUsedLimitCents(BigInt(1_200_000), BigInt(100_000))).toBe(BigInt(1_100_000));
   });
 
   it("does not put the full purchase in the first month", () => {
@@ -100,12 +112,8 @@ describe("card limits and budget", () => {
   });
 
   it("excludes cancelled purchases from used limit", () => {
-    expect(
-      cardUsedLimitCents([
-        { amountCents: BigInt(10_000), purchaseActive: false, statementPendingCents: BigInt(10_000) },
-        { amountCents: BigInt(4_000), purchaseActive: true, statementPendingCents: BigInt(4_000) },
-      ]),
-    ).toBe(BigInt(4_000));
+    expect(cardUsedLimitCents(BigInt(4_000), BigInt(0))).toBe(BigInt(4_000));
+    expect(cardUsedLimitCents(BigInt(0), BigInt(0))).toBe(BigInt(0));
   });
 
   it("derives statement status from dates and payments", () => {
@@ -145,7 +153,7 @@ describe("card limits and budget", () => {
 });
 
 describe("available balance with cards and debts", () => {
-  it("keeps available unchanged after paying a statement", () => {
+  it("keeps available unchanged after paying a statement due this month", () => {
     const before = availableBalance({
       currentHouseholdCents: BigInt(1_000_000),
       pendingIncomeCents: BigInt(0),
@@ -180,6 +188,66 @@ describe("available balance with cards and debts", () => {
       unpaidCardStatementsCents: BigInt(0),
     });
     expect(before).toBe(after);
+  });
+
+  it("drops cash now when a next-month statement is paid early", () => {
+    const current = availableBalance({
+      currentHouseholdCents: BigInt(1_000_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(0),
+    });
+    const afterEarlyPay = availableBalance({
+      currentHouseholdCents: BigInt(800_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(0),
+    });
+    expect(current).toBe(BigInt(1_000_000));
+    expect(afterEarlyPay).toBe(BigInt(800_000));
+
+    const nextMonthBefore = availableBalance({
+      currentHouseholdCents: BigInt(1_000_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(200_000),
+    });
+    const nextMonthAfter = availableBalance({
+      currentHouseholdCents: BigInt(800_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(0),
+    });
+    expect(nextMonthBefore).toBe(nextMonthAfter);
+  });
+
+  it("handles partial, total and last-day payments without double counting", () => {
+    const partial = availableBalance({
+      currentHouseholdCents: BigInt(900_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(100_000),
+    });
+    const total = availableBalance({
+      currentHouseholdCents: BigInt(800_000),
+      pendingIncomeCents: BigInt(0),
+      pendingExpenseCents: BigInt(0),
+      investmentReserveCents: BigInt(0),
+      unpaidCardStatementsCents: BigInt(0),
+    });
+    expect(partial).toBe(BigInt(800_000));
+    expect(total).toBe(partial);
+    expect(unpaidStatementsThrough([{ dueDate: "2026-08-31", pendingCents: BigInt(50_000) }], "2026-08-31")).toBe(
+      BigInt(50_000),
+    );
+    expect(unpaidStatementsThrough([{ dueDate: "2026-09-01", pendingCents: BigInt(50_000) }], "2026-08-31")).toBe(
+      BigInt(0),
+    );
   });
 
   it("does not count a paid statement twice", () => {

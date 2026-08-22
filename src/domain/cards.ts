@@ -1,5 +1,5 @@
 import { addMonths, occurrenceDate, parseIsoDate, yearMonth } from "@/lib/dates";
-import { addCents, subtractCents } from "@/lib/money";
+import { addCents, maxCents, subtractCents } from "@/lib/money";
 import type { Cents } from "@/types/money";
 
 import { ZERO_CENTS } from "./ledger";
@@ -112,14 +112,13 @@ export function deriveStatementStatus(input: {
   return "OPEN";
 }
 
-export function cardUsedLimitCents(
-  items: Array<{ amountCents: Cents; purchaseActive: boolean; statementPendingCents: Cents }>,
-): Cents {
-  return addCents(
-    ...items
-      .filter((item) => item.purchaseActive && item.statementPendingCents > ZERO_CENTS)
-      .map((item) => item.amountCents),
-  );
+/**
+ * Remaining used limit after valid payments.
+ * Partial payments free limit proportionally without allocating cents to each installment.
+ * Cancelled purchases must be excluded from `activeInstallmentCents` by the caller.
+ */
+export function cardUsedLimitCents(activeInstallmentCents: Cents, validPaymentCents: Cents): Cents {
+  return maxCents(subtractCents(activeInstallmentCents, validPaymentCents), ZERO_CENTS);
 }
 
 export function cardAvailableLimitCents(limitCents: Cents, usedCents: Cents): Cents {

@@ -4,11 +4,21 @@ import { ForbiddenError } from "@/lib/access";
 import { requireHouseholdMembership } from "@/lib/require-household";
 import {
   cancelPurchaseSchema,
+  cardActiveSchema,
   cardPaymentSchema,
   cardPurchaseSchema,
   creditCardSchema,
+  updateCreditCardSchema,
 } from "@/lib/validations/cards";
-import { CardError, cancelCardPurchase, createCardPurchase, createCreditCard, payCardStatement } from "@/services/cards";
+import {
+  CardError,
+  cancelCardPurchase,
+  createCardPurchase,
+  createCreditCard,
+  payCardStatement,
+  setCreditCardActive,
+  updateCreditCard,
+} from "@/services/cards";
 import { LedgerError } from "@/services/transactions";
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
@@ -54,6 +64,50 @@ export async function createCreditCardAction(input: unknown): Promise<ActionResu
       dueDay: parsed.data.dueDay,
     });
     return { ok: true, id: card?.id };
+  } catch (error) {
+    return toError(error);
+  }
+}
+
+export async function updateCreditCardAction(input: unknown): Promise<ActionResult> {
+  const parsed = updateCreditCardSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
+  }
+
+  try {
+    const { session, household } = await requireHouseholdMembership();
+    await updateCreditCard({
+      userId: session.user.id,
+      householdId: household.id,
+      creditCardId: parsed.data.creditCardId,
+      name: parsed.data.name,
+      issuer: parsed.data.issuer,
+      limitCents: parsed.data.limitCents,
+      closingDay: parsed.data.closingDay,
+      dueDay: parsed.data.dueDay,
+    });
+    return { ok: true, id: parsed.data.creditCardId };
+  } catch (error) {
+    return toError(error);
+  }
+}
+
+export async function setCreditCardActiveAction(input: unknown): Promise<ActionResult> {
+  const parsed = cardActiveSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Cartão inválido." };
+  }
+
+  try {
+    const { session, household } = await requireHouseholdMembership();
+    await setCreditCardActive({
+      userId: session.user.id,
+      householdId: household.id,
+      creditCardId: parsed.data.creditCardId,
+      active: parsed.data.active,
+    });
+    return { ok: true, id: parsed.data.creditCardId };
   } catch (error) {
     return toError(error);
   }

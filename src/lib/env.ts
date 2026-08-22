@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { getAppBaseUrl } from "@/lib/trusted-origins";
+
 const optionalNonEmpty = z
   .string()
   .trim()
@@ -29,6 +31,9 @@ export const serverEnvSchema = z.object({
     .or(z.literal("").transform(() => undefined)),
   OPENAI_API_KEY: optionalNonEmpty,
   OPENAI_MODEL: optionalNonEmpty,
+  TEST_DATABASE_URL: optionalNonEmpty,
+  TEST_DATABASE_BRANCH: optionalNonEmpty,
+  BETTER_AUTH_TRUSTED_ORIGINS: optionalNonEmpty,
   NODE_ENV: z.enum(["development", "test", "production"]).optional(),
 });
 
@@ -44,6 +49,9 @@ export function parseServerEnv(
     NEXT_PUBLIC_APP_URL: env.NEXT_PUBLIC_APP_URL,
     OPENAI_API_KEY: env.OPENAI_API_KEY,
     OPENAI_MODEL: env.OPENAI_MODEL,
+    TEST_DATABASE_URL: env.TEST_DATABASE_URL,
+    TEST_DATABASE_BRANCH: env.TEST_DATABASE_BRANCH,
+    BETTER_AUTH_TRUSTED_ORIGINS: env.BETTER_AUTH_TRUSTED_ORIGINS,
     NODE_ENV: env.NODE_ENV,
   });
 }
@@ -86,6 +94,9 @@ export function isOpenAiConfigured(env: ServerEnv = parseServerEnv()) {
   return Boolean(env.OPENAI_API_KEY);
 }
 
-export function getAppUrl(env: ServerEnv = parseServerEnv()) {
-  return env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+export function getAppUrl(
+  env: ServerEnv = parseServerEnv(),
+  runtime: Record<string, string | undefined> = process.env,
+) {
+  return getAppBaseUrl(env.BETTER_AUTH_URL ?? env.NEXT_PUBLIC_APP_URL, runtime);
 }

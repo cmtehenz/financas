@@ -2,24 +2,32 @@ import { inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { closeDb, getDb } from "@/db";
+import { requireTestDatabaseUrl } from "@/lib/test-database";
 import { households } from "@/db/schema";
 import { user } from "@/db/schema/auth";
 import { availableBalance, currentAccountBalance } from "@/domain/ledger";
 import { createId } from "@/lib/ids";
 import { createFinancialAccount } from "@/services/accounts";
 import {
+  CardError,
   cancelCardPurchase,
   createCardPurchase,
   createCreditCard,
   householdCardState,
   payCardStatement,
+  setCreditCardActive,
 } from "@/services/cards";
 import { listHouseholdCategories } from "@/services/categories";
 import { createDebt, DebtError, listDebtInstallments, payDebtInstallment } from "@/services/debts";
 import { createHouseholdForUser } from "@/services/households";
 import { listAllHouseholdTransactions } from "@/services/transactions";
 
-const db = getDb();
+const canWrite = Boolean(process.env.TEST_DATABASE_URL);
+if (canWrite) {
+  requireTestDatabaseUrl();
+}
+
+const db = canWrite ? getDb() : null!;
 const createdUserIds: string[] = [];
 const createdHouseholdIds: string[] = [];
 
@@ -31,7 +39,7 @@ async function insertUser(name: string) {
   return { id, email, name };
 }
 
-describe.sequential("cards and debts isolation", { timeout: 40_000 }, () => {
+describe.skipIf(!canWrite).sequential("cards and debts isolation", { timeout: 40_000 }, () => {
   afterAll(async () => {
     if (createdHouseholdIds.length > 0) {
       await db.delete(households).where(inArray(households.id, createdHouseholdIds));
@@ -177,6 +185,8 @@ describe.sequential("cards and debts isolation", { timeout: 40_000 }, () => {
       idempotencyKey: key,
     });
     expect(repeat?.id).toBe(firstPay?.id);
+    const afterPartial = await householdCardState(houseA.household.id, "2026-08-31");
+    expect(afterPartial.usedCents).toBe(BigInt(120_000));
 
     await payCardStatement({
       userId: ownerA.id,
@@ -229,6 +239,45 @@ describe.sequential("cards and debts isolation", { timeout: 40_000 }, () => {
     });
     const afterCancel = await householdCardState(houseA.household.id, "2026-09-30");
     expect(afterCancel.purchases.find((item) => item.id === later!.id)?.status).toBe("CANCELLED");
+    expect(afterCancel.usedCents).toBe(BigInt(0));
+
+    await setCreditCardActive({
+      userId: ownerA.id,
+      householdId: houseA.household.id,
+      creditCardId: cardA!.id,
+      active: false,
+    });
+    await expect(
+      createCardPurchase({
+        userId: ownerA.id,
+        householdId: houseA.household.id,
+        creditCardId: cardA!.id,
+        categoryId: mercado.id,
+        description: "Bloqueada",
+        totalAmountCents: BigInt(1_000),
+        purchaseDate: "2026-08-20",
+        installmentCount: 1,
+      }),
+    ).rejects.toBeInstanceOf(CardError);
+    const inactiveState = await householdCardState(houseA.household.id, "2026-09-30");
+    expect(inactiveState.purchases.find((item) => item.id === later!.id)?.status).toBe("CANCELLED");
+    await setCreditCardActive({
+      userId: ownerA.id,
+      householdId: houseA.household.id,
+      creditCardId: cardA!.id,
+      active: true,
+    });
+    const reactivated = await createCardPurchase({
+      userId: ownerA.id,
+      householdId: houseA.household.id,
+      creditCardId: cardA!.id,
+      categoryId: mercado.id,
+      description: "Depois de reativar",
+      totalAmountCents: BigInt(2_000),
+      purchaseDate: "2026-08-21",
+      installmentCount: 1,
+    });
+    expect(reactivated).toBeTruthy();
 
     const debt = await createDebt({
       userId: ownerA.id,
