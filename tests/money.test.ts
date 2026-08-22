@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { addCents, formatBRL, subtractCents, toCents } from "@/lib/money";
+import { addCents, formatBRL, formatCentsInput, subtractCents, toCents } from "@/lib/money";
 
 describe("money helpers", () => {
   it("parses decimal strings into integer cents", () => {
     expect(toCents("10,50")).toBe(BigInt(1050));
     expect(toCents("1234,56")).toBe(BigInt(123456));
+    expect(toCents("1.234,56")).toBe(BigInt(123456));
     expect(toCents("-3,09")).toBe(BigInt(-309));
   });
 
@@ -23,5 +24,9 @@ describe("money helpers", () => {
     expect(formatBRL(BigInt(1050))).toBe("R$ 10,50");
     expect(formatBRL(BigInt(123456))).toBe("R$ 1.234,56");
     expect(formatBRL(BigInt(-90))).toBe("-R$ 0,90");
+  });
+
+  it("formats cents for form inputs without thousands separators", () => {
+    expect(formatCentsInput(BigInt(123456))).toBe("1234,56");
   });
 });

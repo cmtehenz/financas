@@ -43,6 +43,9 @@ yarn-error.log*
 .env*.local
 !.env.example
 
+# neon local context is safe to commit (no secrets)
+# env files remain ignored
+
 # vercel
 .vercel
 

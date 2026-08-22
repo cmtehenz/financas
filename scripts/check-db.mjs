@@ -3,8 +3,11 @@ import path from "node:path";
 
 const requiredFiles = [
   "src/db/schema/auth.ts",
+  "src/db/schema/household.ts",
   "src/db/schema/index.ts",
   "drizzle/0000_better_auth.sql",
+  "drizzle/0001_auth_account_issuer.sql",
+  "drizzle/0002_household_onboarding.sql",
   "drizzle/meta/_journal.json",
 ];
 

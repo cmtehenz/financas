@@ -9,13 +9,18 @@ export function toPublicAuthError(error: unknown) {
     message.includes("already registered") ||
     message.includes("user already")
   ) {
-    return "Este e-mail já está cadastrado.";
+    return "Este e-mail já está cadastrado. Entre com a senha ou use outro e-mail.";
+  }
+
+  if (message.includes("failed to create user") || message.includes("failed to create session")) {
+    return "Não foi possível criar a conta. Tente novamente em instantes.";
   }
 
   if (
     message.includes("invalid email or password") ||
     message.includes("invalid credentials") ||
-    message.includes("invalid password")
+    message.includes("invalid password") ||
+    message.includes("user not found")
   ) {
     return "E-mail ou senha inválidos.";
   }

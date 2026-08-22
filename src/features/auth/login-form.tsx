@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signInSchema, type SignInInput } from "@/lib/validations/auth";
 
-export function LoginForm() {
+export function LoginForm({ next = "/dashboard" }: { next?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const form = useForm<SignInInput>({
@@ -33,7 +33,7 @@ export function LoginForm() {
       }
 
       toast.success("Sessão iniciada.");
-      router.push("/dashboard");
+      router.push(next);
       router.refresh();
     } finally {
       setPending(false);
@@ -41,7 +41,7 @@ export function LoginForm() {
   }
 
   return (
-    <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    <form className="space-y-5" method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <div className="space-y-2">
         <Label htmlFor="email">E-mail</Label>
         <Input

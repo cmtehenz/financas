@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUpSchema, type SignUpInput } from "@/lib/validations/auth";
 
-export function SignupForm() {
+export function SignupForm({ next = "/dashboard" }: { next?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const form = useForm<SignUpInput>({
@@ -33,7 +33,7 @@ export function SignupForm() {
       }
 
       toast.success("Conta criada. Bem-vindo.");
-      router.push("/dashboard");
+      router.push(next);
       router.refresh();
     } finally {
       setPending(false);
@@ -41,7 +41,7 @@ export function SignupForm() {
   }
 
   return (
-    <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+    <form className="space-y-5" method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <div className="space-y-2">
         <Label htmlFor="name">Nome</Label>
         <Input id="name" autoComplete="name" className="h-11" {...form.register("name")} />

@@ -19,12 +19,13 @@ export function toCents(value: Cents | number | string): Cents {
   const normalized = value.trim().replace(/\s/g, "").replace("R$", "");
   const negative = normalized.startsWith("-");
   const unsigned = negative ? normalized.slice(1) : normalized;
+  const compact = unsigned.includes(",") ? unsigned.replace(/\./g, "") : unsigned;
 
-  if (!/^\d+([.,]\d{1,2})?$/.test(unsigned)) {
+  if (!/^\d+([.,]\d{1,2})?$/.test(compact)) {
     throw new Error("Invalid money amount.");
   }
 
-  const [wholePart = "0", fractionPart = ""] = unsigned.replace(",", ".").split(".");
+  const [wholePart = "0", fractionPart = ""] = compact.replace(",", ".").split(".");
   const fraction = `${fractionPart}00`.slice(0, 2);
   const cents = BigInt(wholePart) * CENTS_PER_REAL + BigInt(fraction);
 
@@ -47,4 +48,13 @@ export function formatBRL(cents: Cents): string {
   const groupedWhole = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
   return `${negative ? "-" : ""}R$ ${groupedWhole},${fraction}`;
+}
+
+export function formatCentsInput(cents: Cents): string {
+  const negative = cents < ZERO;
+  const absolute = negative ? -cents : cents;
+  const whole = absolute / CENTS_PER_REAL;
+  const fraction = (absolute % CENTS_PER_REAL).toString().padStart(2, "0");
+
+  return `${negative ? "-" : ""}${whole.toString()},${fraction}`;
 }

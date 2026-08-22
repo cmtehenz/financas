@@ -1,11 +1,15 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
+import ws from "ws";
 
 import * as schema from "./schema";
+
+neonConfig.webSocketConstructor = ws;
 
 type Database = ReturnType<typeof createDb>;
 
 let db: Database | undefined;
+let pool: Pool | undefined;
 
 function createDb() {
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
@@ -17,7 +21,8 @@ function createDb() {
     throw new Error("DATABASE_URL is not configured");
   }
 
-  return drizzle({ client: neon(databaseUrl), schema });
+  pool = new Pool({ connectionString: databaseUrl });
+  return drizzle({ client: pool, schema });
 }
 
 export function getDb() {
@@ -26,6 +31,12 @@ export function getDb() {
   }
 
   return db;
+}
+
+export async function closeDb() {
+  await pool?.end();
+  pool = undefined;
+  db = undefined;
 }
 
 export type AppDatabase = Database;

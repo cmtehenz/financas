@@ -5,6 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/db";
 import * as schema from "@/db/schema";
 import { getAppUrl, parseServerEnv } from "@/lib/env";
+import { getTrustedOrigins } from "@/lib/trusted-origins";
 
 const BUILD_PLACEHOLDER_SECRET = "build-placeholder-secret-min-32-chars!!";
 
@@ -28,7 +29,7 @@ function createAuth() {
     }),
     secret,
     baseURL: getAppUrl(env),
-    trustedOrigins: [getAppUrl(env)],
+    trustedOrigins: getTrustedOrigins(getAppUrl(env)),
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

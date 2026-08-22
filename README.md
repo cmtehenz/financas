@@ -2,6 +2,8 @@
 
 Aplicativo web para o controle financeiro da casa. MVP em Next.js, Neon e Better Auth.
 
+A Fase 2 cobre a Casa compartilhada, o onboarding, contas manuais, categorias iniciais e o convite da família. Sem a Casa, o início redireciona para `/onboarding`.
+
 ## Requisitos locais
 
 - Node.js 20+
