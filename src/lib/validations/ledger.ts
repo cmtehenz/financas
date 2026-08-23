@@ -15,6 +15,18 @@ const moneyInput = z
     }
   }, "Informe um valor maior que zero, como 150,00.");
 
+const plannedMoneyInput = z
+  .string()
+  .trim()
+  .min(1, "Informe o valor.")
+  .refine((value) => {
+    try {
+      return toCents(value) >= BigInt(0);
+    } catch {
+      return false;
+    }
+  }, "Informe um valor válido, inclusive 0,00 para contas a definir.");
+
 const isoDate = z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Informe uma data válida.");
 const emptyToUndefined = z
   .string()
@@ -22,10 +34,10 @@ const emptyToUndefined = z
   .transform((value) => (value && value.trim() ? value : undefined));
 const optionalId = emptyToUndefined;
 
-export const transactionFormSchema = z.object({
+const transactionFormFields = z.object({
   type: z.enum(TRANSACTION_TYPES),
   description: z.string().trim().min(2, "Informe a descrição.").max(120),
-  amount: moneyInput,
+  amount: plannedMoneyInput,
   accountId: z.string().min(1, "Informe a conta."),
   destinationAccountId: optionalId,
   categoryId: optionalId,
@@ -38,15 +50,33 @@ export const transactionFormSchema = z.object({
   dueDay: z.string().optional(),
 });
 
-export const transactionSchema = transactionFormSchema.transform((values) => ({
+function refineTransactionAmount(
+  values: { type: string; amount: string; status: string; recurring?: boolean },
+  ctx: z.RefinementCtx,
+) {
+  const amountCents = toCents(values.amount);
+  const requiresPositive = values.type === "TRANSFER" || values.status === "PAID" || values.recurring;
+  if (requiresPositive && amountCents <= BigInt(0)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["amount"],
+      message: "Informe um valor maior que zero, como 150,00.",
+    });
+  }
+}
+
+export const transactionFormSchema = transactionFormFields.superRefine(refineTransactionAmount);
+
+export const transactionSchema = transactionFormFields.superRefine(refineTransactionAmount).transform((values) => ({
   ...values,
   amountCents: toCents(values.amount),
   dueDate: values.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(values.dueDate) ? values.dueDate : undefined,
 }));
 
-export const updateTransactionSchema = transactionFormSchema
+export const updateTransactionSchema = transactionFormFields
   .omit({ recurring: true, dueDay: true })
   .extend({ transactionId: z.string().uuid() })
+  .superRefine(refineTransactionAmount)
   .transform((values) => ({
     ...values,
     amountCents: toCents(values.amount),
@@ -138,6 +168,27 @@ export const recurringRuleSchema = z.object({
   dueDay: z.coerce.number().int().min(1).max(31),
   endDate: z.string().trim().optional().or(z.literal("").transform(() => undefined)),
   defaultStatus: z.enum(["PLANNED", "PENDING"]),
+});
+
+export const settlePlanningItemSchema = z.object({
+  itemId: z.string().min(1),
+  kind: z.enum(["LEDGER", "INVESTMENT"]),
+  amount: moneyInput,
+  accountId: z.string().min(1, "Informe a conta."),
+  paidAt: isoDate,
+  year: z.coerce.number().int().min(2000).max(2100).optional(),
+  month: z.coerce.number().int().min(1).max(12).optional(),
+});
+
+export const copyPlanningMonthSchema = z.object({
+  year: z.coerce.number().int().min(2000).max(2100),
+  month: z.coerce.number().int().min(1).max(12),
+  transactionIds: z.array(z.string().uuid()).min(1, "Selecione ao menos um item."),
+});
+
+export const makePlanningRecurringSchema = z.object({
+  transactionId: z.string().uuid(),
+  dueDay: z.coerce.number().int().min(1).max(31),
 });
 
 export type TransactionFormInput = z.input<typeof transactionFormSchema>;

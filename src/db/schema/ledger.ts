@@ -70,6 +70,7 @@ export const transactions = pgTable(
     description: text("description").notNull(),
     normalizedDescription: text("normalized_description"),
     type: text("type").notNull(),
+    // Never null. 0 = "A definir" for PLANNED/PENDING only. PAID requires > 0.
     amountCents: bigint("amount_cents", { mode: "bigint" }).notNull(),
     status: text("status").notNull(),
     visibility: text("visibility").notNull().default("HOUSEHOLD"),
@@ -81,6 +82,7 @@ export const transactions = pgTable(
     notes: text("notes"),
     recurringRuleId: text("recurring_rule_id").references(() => recurringRules.id),
     recurrenceOccurrenceKey: text("recurrence_occurrence_key"),
+    planningCopyKey: text("planning_copy_key"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     deletedAt: timestamp("deleted_at"),
@@ -95,6 +97,9 @@ export const transactions = pgTable(
     uniqueIndex("transaction_recurrence_occurrence_unique")
       .on(table.householdId, table.recurringRuleId, table.recurrenceOccurrenceKey)
       .where(sql`${table.recurringRuleId} is not null and ${table.recurrenceOccurrenceKey} is not null`),
+    uniqueIndex("transaction_planning_copy_unique")
+      .on(table.householdId, table.planningCopyKey)
+      .where(sql`${table.planningCopyKey} is not null`),
   ],
 );
 

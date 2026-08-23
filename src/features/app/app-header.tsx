@@ -33,7 +33,32 @@ export function AppSidebar() {
 export function AppBottomNav() {
   return (
     <div className="sticky bottom-0 border-t border-border bg-card/95 lg:hidden">
-      <AppNav className="flex items-center gap-1 overflow-x-auto px-2 py-2 text-xs" />
+      <div className="flex items-center gap-1 overflow-x-auto px-2 py-2 text-xs">
+        <AppNav
+          className="flex items-center gap-1"
+          links={[
+            { href: "/dashboard", label: "Início" },
+            { href: "/planejamento", label: "Planejamento" },
+            { href: "/movimentacoes", label: "Movimentações" },
+            { href: "/orcamento", label: "Orçamento" },
+          ]}
+        />
+        <details className="relative">
+          <summary className="cursor-pointer list-none rounded-lg px-2 py-1.5 whitespace-nowrap hover:bg-muted">
+            Mais
+          </summary>
+          <div className="absolute right-0 bottom-full mb-2 min-w-40 rounded-xl border border-border bg-card p-2 shadow-lg">
+            <AppNav
+              className="flex flex-col gap-1"
+              links={[
+                { href: "/cartoes", label: "Cartões" },
+                { href: "/dividas", label: "Dívidas" },
+                { href: "/configuracoes", label: "Configurações" },
+              ]}
+            />
+          </div>
+        </details>
+      </div>
     </div>
   );
 }

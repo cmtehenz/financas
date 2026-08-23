@@ -24,6 +24,8 @@ export function TransactionForm({
   defaultDate,
   transactionId,
   defaultValues,
+  redirectTo = "/movimentacoes",
+  idPrefix = "",
 }: {
   accounts: Array<{ id: string; name: string; active: boolean }>;
   categories: Array<{ id: string; name: string; type: string; active: boolean }>;
@@ -31,6 +33,8 @@ export function TransactionForm({
   defaultDate: string;
   transactionId?: string;
   defaultValues?: Partial<TransactionFormInput>;
+  redirectTo?: string;
+  idPrefix?: string;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
@@ -72,7 +76,7 @@ export function TransactionForm({
       }
 
       toast.success(transactionId ? "Movimentação atualizada." : "Movimentação criada.");
-      router.push("/movimentacoes");
+      router.push(redirectTo);
       router.refresh();
     } finally {
       setPending(false);
@@ -104,21 +108,21 @@ export function TransactionForm({
       </fieldset>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Descrição</Label>
-        <Input id="description" className="h-11" {...form.register("description")} />
+        <Label htmlFor={`${idPrefix}description`}>Descrição</Label>
+        <Input id={`${idPrefix}description`} className="h-11" {...form.register("description")} />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="amount">Valor</Label>
-        <Input id="amount" className="h-11" inputMode="decimal" placeholder="0,00" {...form.register("amount")} />
+        <Label htmlFor={`${idPrefix}amount`}>Valor</Label>
+        <Input id={`${idPrefix}amount`} className="h-11" inputMode="decimal" placeholder="0,00" {...form.register("amount")} />
         {form.formState.errors.amount ? (
           <p className="text-sm text-destructive">{form.formState.errors.amount.message}</p>
         ) : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="accountId">{type === "TRANSFER" ? "Conta de origem" : "Conta"}</Label>
-        <select id="accountId" className={selectClassName} {...form.register("accountId")}>
+        <Label htmlFor={`${idPrefix}accountId`}>{type === "TRANSFER" ? "Conta de origem" : "Conta"}</Label>
+        <select id={`${idPrefix}accountId`} className={selectClassName} {...form.register("accountId")}>
           {accounts
             .filter((account) => account.active)
             .map((account) => (
@@ -131,9 +135,9 @@ export function TransactionForm({
 
       {type === "TRANSFER" ? (
         <div className="space-y-2">
-          <Label htmlFor="destinationAccountId">Conta de destino</Label>
+          <Label htmlFor={`${idPrefix}destinationAccountId`}>Conta de destino</Label>
           <select
-            id="destinationAccountId"
+            id={`${idPrefix}destinationAccountId`}
             className={selectClassName}
             {...form.register("destinationAccountId")}
           >
@@ -149,8 +153,8 @@ export function TransactionForm({
         </div>
       ) : (
         <div className="space-y-2">
-          <Label htmlFor="categoryId">Categoria</Label>
-          <select id="categoryId" className={selectClassName} {...form.register("categoryId")}>
+          <Label htmlFor={`${idPrefix}categoryId`}>Categoria</Label>
+          <select id={`${idPrefix}categoryId`} className={selectClassName} {...form.register("categoryId")}>
             <option value="">Selecione</option>
             {visibleCategories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -162,8 +166,8 @@ export function TransactionForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="assignedToUserId">Responsável</Label>
-        <select id="assignedToUserId" className={selectClassName} {...form.register("assignedToUserId")}>
+        <Label htmlFor={`${idPrefix}assignedToUserId`}>Responsável</Label>
+        <select id={`${idPrefix}assignedToUserId`} className={selectClassName} {...form.register("assignedToUserId")}>
           <option value="">Compartilhado</option>
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
@@ -175,20 +179,20 @@ export function TransactionForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="transactionDate">Data</Label>
-          <Input id="transactionDate" type="date" className="h-11" {...form.register("transactionDate")} />
+          <Label htmlFor={`${idPrefix}transactionDate`}>Data</Label>
+          <Input id={`${idPrefix}transactionDate`} type="date" className="h-11" {...form.register("transactionDate")} />
         </div>
         {type !== "TRANSFER" ? (
           <div className="space-y-2">
-            <Label htmlFor="dueDate">Vencimento</Label>
-            <Input id="dueDate" type="date" className="h-11" {...form.register("dueDate")} />
+            <Label htmlFor={`${idPrefix}dueDate`}>Vencimento</Label>
+            <Input id={`${idPrefix}dueDate`} type="date" className="h-11" {...form.register("dueDate")} />
           </div>
         ) : null}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="status">Situação</Label>
-        <select id="status" className={selectClassName} {...form.register("status")}>
+        <Label htmlFor={`${idPrefix}status`}>Situação</Label>
+        <select id={`${idPrefix}status`} className={selectClassName} {...form.register("status")}>
           {(["PLANNED", "PENDING", "PAID"] as const).map((status) => (
             <option key={status} value={status}>
               {TRANSACTION_STATUS_LABELS[status]}
@@ -210,16 +214,16 @@ export function TransactionForm({
           </label>
           {recurring ? (
             <div className="space-y-2">
-              <Label htmlFor="dueDay">Dia do vencimento</Label>
-              <Input id="dueDay" type="number" min={1} max={31} className="h-11" {...form.register("dueDay")} />
+              <Label htmlFor={`${idPrefix}dueDay`}>Dia do vencimento</Label>
+              <Input id={`${idPrefix}dueDay`} type="number" min={1} max={31} className="h-11" {...form.register("dueDay")} />
             </div>
           ) : null}
         </div>
       ) : null}
 
       <div className="space-y-2">
-        <Label htmlFor="notes">Observação</Label>
-        <Input id="notes" className="h-11" {...form.register("notes")} />
+        <Label htmlFor={`${idPrefix}notes`}>Observação</Label>
+        <Input id={`${idPrefix}notes`} className="h-11" {...form.register("notes")} />
       </div>
 
       <Button type="submit" className="h-11 w-full" disabled={pending}>

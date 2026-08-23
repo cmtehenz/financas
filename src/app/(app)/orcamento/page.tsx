@@ -40,7 +40,16 @@ export default async function BudgetPage({
       <header className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-3xl tracking-tight">Orçamento</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Mês {summary.monthKey}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Mês {summary.monthKey} ·{" "}
+            <Link href={`/planejamento?ano=${year}&mes=${month}`} className="underline">
+              Planejamento
+            </Link>
+            {" · "}
+            <Link href="/dashboard" className="underline">
+              Início
+            </Link>
+          </p>
         </div>
         <div className="flex gap-3 text-sm">
           <Link href={`/orcamento?mes=${shiftYearMonth(summary.monthKey, -1)}`} className="underline">

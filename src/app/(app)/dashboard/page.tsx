@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { formatBRL } from "@/lib/money";
 import { parseYearMonth, todayInSaoPaulo } from "@/lib/dates";
@@ -41,6 +42,15 @@ export default async function DashboardPage() {
           Saldo atual da Casa (caixa já liquidado) + receitas pendentes − despesas
           pendentes − reserva de investimento − faturas não pagas com vencimento até o
           fim do mês. Faturas futuras entram só na projeção, não neste número.
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          <Link href="/planejamento" className="underline">
+            Planejamento do mês
+          </Link>
+          {" · "}
+          <Link href="/orcamento" className="underline">
+            Orçamento
+          </Link>
         </p>
       </section>
 

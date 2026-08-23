@@ -24,7 +24,10 @@ export class LedgerError extends Error {
       | "INACTIVE_ACCOUNT"
       | "TRANSFER_ACCOUNTS"
       | "FOREIGN_MEMBER"
-      | "NOT_FOUND",
+      | "NOT_FOUND"
+      | "ALREADY_PAID"
+      | "UNDEFINED_AMOUNT"
+      | "INVALID_STATUS",
   ) {
     super(message);
     this.name = "LedgerError";
@@ -99,8 +102,25 @@ function paidAtForStatus(status: TransactionStatus, previousPaidAt?: Date | null
   return null;
 }
 
-function assertAmount(amountCents: Cents) {
-  if (amountCents <= BigInt(0)) {
+function assertAmount(
+  amountCents: Cents,
+  options: { status?: TransactionStatus; type?: TransactionType; origin?: string } = {},
+) {
+  if (amountCents < BigInt(0)) {
+    throw new LedgerError("O valor não pode ser negativo.", "INVALID_AMOUNT");
+  }
+
+  const allowsZero =
+    (options.status === "PLANNED" || options.status === "PENDING") &&
+    options.type !== "TRANSFER" &&
+    options.origin !== "CARD_PAYMENT" &&
+    options.origin !== "DEBT_PAYMENT";
+
+  if (options.status === "PAID" && amountCents <= BigInt(0)) {
+    throw new LedgerError("Pagamento exige valor maior que zero.", "UNDEFINED_AMOUNT");
+  }
+
+  if (amountCents === BigInt(0) && !allowsZero) {
     throw new LedgerError("O valor precisa ser maior que zero.", "INVALID_AMOUNT");
   }
 }
@@ -115,10 +135,11 @@ export async function validateLedgerWrite(
     categoryId?: string | null;
     assignedToUserId?: string | null;
     origin?: "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT";
+    status?: TransactionStatus;
   },
   db: Db = getDb(),
 ) {
-  assertAmount(input.amountCents);
+  assertAmount(input.amountCents, { status: input.status, type: input.type, origin: input.origin });
   const account = await requireActiveAccount(input.householdId, input.accountId, db);
   const origin = input.origin ?? "MANUAL";
 
@@ -175,6 +196,7 @@ export async function createTransaction(
     recurrenceOccurrenceKey?: string | null;
     origin?: "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT";
     budgetImpact?: boolean;
+    planningCopyKey?: string | null;
   },
   db: Db = getDb(),
 ) {
@@ -212,6 +234,7 @@ export async function createTransaction(
       notes: input.notes || null,
       recurringRuleId: input.recurringRuleId ?? null,
       recurrenceOccurrenceKey: input.recurrenceOccurrenceKey ?? null,
+      planningCopyKey: input.planningCopyKey ?? null,
       createdAt: now,
       updatedAt: now,
     })
@@ -331,6 +354,10 @@ export async function setTransactionStatus(
     throw new LedgerError("Movimentação não encontrada.", "NOT_FOUND");
   }
 
+  if (input.status === "PAID" && existing.amountCents <= BigInt(0)) {
+    throw new LedgerError("Informe o valor antes de marcar como paga.", "UNDEFINED_AMOUNT");
+  }
+
   const [row] = await db
     .update(transactions)
     .set({
@@ -444,4 +471,84 @@ export async function listAllHouseholdTransactions(householdId: string, db: Db =
     .select()
     .from(transactions)
     .where(and(eq(transactions.householdId, householdId), sql`${transactions.deletedAt} is null`));
+}
+
+function paidAtFromIsoDate(paidAt: string) {
+  return new Date(`${paidAt}T15:00:00.000-03:00`);
+}
+
+export async function settleLedgerPlanningItem(
+  input: {
+    userId: string;
+    householdId: string;
+    transactionId: string;
+    amountCents: Cents;
+    accountId: string;
+    paidAt: string;
+  },
+  db: Db = getDb(),
+) {
+  await assertHouseholdAccessForUser(input.userId, input.householdId, db);
+
+  const existing = await getTransaction(input.householdId, input.transactionId, db);
+  if (!existing || existing.deletedAt) {
+    throw new LedgerError("Movimentação não encontrada.", "NOT_FOUND");
+  }
+
+  if (existing.status === "PAID") {
+    throw new LedgerError("Esta conta já foi paga.", "ALREADY_PAID");
+  }
+
+  if (existing.status === "CANCELLED") {
+    throw new LedgerError("Conta cancelada não pode ser paga.", "INVALID_STATUS");
+  }
+
+  if (existing.type === "TRANSFER" || existing.origin === "CARD_PAYMENT" || existing.origin === "DEBT_PAYMENT") {
+    throw new LedgerError("Use o fluxo original desta movimentação.", "INVALID_STATUS");
+  }
+
+  if (input.amountCents <= BigInt(0)) {
+    throw new LedgerError("Informe um valor maior que zero para pagar.", "UNDEFINED_AMOUNT");
+  }
+
+  const type = existing.type as TransactionType;
+  await validateLedgerWrite(
+    {
+      householdId: input.householdId,
+      type,
+      amountCents: input.amountCents,
+      accountId: input.accountId,
+      categoryId: existing.categoryId,
+      assignedToUserId: existing.assignedToUserId,
+      origin: existing.origin as "MANUAL" | "CARD_PAYMENT" | "DEBT_PAYMENT",
+      status: "PAID",
+    },
+    db,
+  );
+
+  const [row] = await db
+    .update(transactions)
+    .set({
+      amountCents: input.amountCents,
+      accountId: input.accountId,
+      status: "PAID",
+      paidAt: paidAtFromIsoDate(input.paidAt),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(transactions.id, existing.id), eq(transactions.householdId, input.householdId)))
+    .returning();
+
+  await recordAudit(
+    {
+      householdId: input.householdId,
+      actorUserId: input.userId,
+      action: "transaction.pay",
+      entityType: "transaction",
+      entityId: existing.id,
+      changedFields: ["status", "amountCents", "accountId", "paidAt"],
+    },
+    db,
+  );
+
+  return row;
 }

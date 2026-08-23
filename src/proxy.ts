@@ -13,7 +13,8 @@ function isAppPath(pathname: string) {
     pathname.startsWith("/movimentacoes") ||
     pathname.startsWith("/orcamento") ||
     pathname.startsWith("/cartoes") ||
-    pathname.startsWith("/dividas")
+    pathname.startsWith("/dividas") ||
+    pathname.startsWith("/planejamento")
   );
 }
 
@@ -48,6 +49,8 @@ export const config = {
     "/cartoes/:path*",
     "/dividas",
     "/dividas/:path*",
+    "/planejamento",
+    "/planejamento/:path*",
     "/login",
     "/cadastro",
     "/recuperar-acesso",
