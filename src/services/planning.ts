@@ -1,6 +1,11 @@
 import { addCents, formatBRL } from "@/lib/money";
 import type { Cents } from "@/types/money";
 import {
+  documentCountKey,
+  documentSubjectForBill,
+  documentSubjectForIncome,
+} from "@/domain/documents";
+import {
   belongsToPlanningMonth,
   canMarkPlanningItemPaid,
   derivePlanningStatus,
@@ -31,6 +36,7 @@ import { listHouseholdCategories } from "./categories";
 import { householdDebtState } from "./debts";
 import { assertHouseholdAccessForUser, listHouseholdMembers } from "./households";
 import { getMonthlySummary } from "./monthly-summary";
+import { listDocumentCounts } from "./documents";
 import { createRecurringRule } from "./recurrences";
 import {
   createTransaction,
@@ -64,6 +70,7 @@ export type PlanningIncomeRow = {
   recurring: boolean;
   categoryId: string;
   status: "PLANNED" | "PENDING" | "PAID";
+  documentCount: number;
 };
 
 export type PlanningBillRow = {
@@ -88,6 +95,7 @@ export type PlanningBillRow = {
   pendingLabel?: string;
   debtId?: string;
   installmentId?: string;
+  documentCount: number;
 };
 
 export type PlanningCopyPreviewItem = {
@@ -206,6 +214,7 @@ export async function getMonthlyPlanningBoard(
         recurring: Boolean(item.recurringRuleId),
         categoryId: item.categoryId ?? "",
         status: planningEditStatus(item.status),
+        documentCount: 0,
       };
     })
     .sort((left, right) => sortByDate(left.expectedDate, right.expectedDate) || left.description.localeCompare(right.description));
@@ -244,6 +253,7 @@ export async function getMonthlyPlanningBoard(
         categoryId: item.categoryId ?? "",
         accountId: item.accountId,
         status: planningEditStatus(item.status),
+        documentCount: 0,
       };
     });
 
@@ -275,6 +285,7 @@ export async function getMonthlyPlanningBoard(
         canPay: statement.pendingCents > ZERO_CENTS,
         statementId: statement.id,
         pendingLabel: formatBRL(statement.pendingCents),
+        documentCount: 0,
       };
     });
 
@@ -309,6 +320,7 @@ export async function getMonthlyPlanningBoard(
         canPay: visualStatus !== "PAGA" && visualStatus !== "CANCELADA",
         debtId: installment.debtId,
         installmentId: installment.id,
+        documentCount: 0,
       };
     });
 
@@ -345,13 +357,26 @@ export async function getMonthlyPlanningBoard(
             visualStatus: "PREVISTA",
             statusLabel: PLANNING_VISUAL_STATUS_LABELS.PREVISTA,
             canPay: true,
+            documentCount: 0,
           },
         ]
       : [];
 
-  const bills = [...ledgerBills, ...cardBills, ...debtBills, ...investmentBills].sort(
+  const rawBills = [...ledgerBills, ...cardBills, ...debtBills, ...investmentBills].sort(
     (left, right) => sortByDate(left.dueDate, right.dueDate) || left.description.localeCompare(right.description),
   );
+  const documentCounts = await listDocumentCounts(input.householdId);
+  const incomesWithDocuments = incomes.map((item) => ({
+    ...item,
+    documentCount: documentCounts.get(documentCountKey(documentSubjectForIncome(item.id))) ?? 0,
+  }));
+  const bills = rawBills.map((item) => {
+    const subject = documentSubjectForBill(item);
+    return {
+      ...item,
+      documentCount: subject ? (documentCounts.get(documentCountKey(subject)) ?? 0) : 0,
+    };
+  });
 
   const totals = planningMonthTotals({
     incomes: incomes.map((item) => ({
@@ -380,7 +405,7 @@ export async function getMonthlyPlanningBoard(
     month: input.month,
     monthKey,
     monthLabel: `${PLANNING_MONTH_LABELS[input.month - 1]} de ${input.year}`,
-    incomes,
+    incomes: incomesWithDocuments,
     bills,
     totals: {
       plannedIncomeLabel: formatBRL(totals.plannedIncomeCents),

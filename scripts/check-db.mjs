@@ -11,7 +11,9 @@ const requiredFiles = [
   "drizzle/0003_transactions_budget.sql",
   "drizzle/0004_cards_debts.sql",
   "drizzle/0005_planning_amount_copy.sql",
+  "drizzle/0006_household_documents.sql",
   "src/db/schema/ledger.ts",
+  "src/db/schema/documents.ts",
   "src/db/schema/cards-debts.ts",
   "drizzle/meta/_journal.json",
 ];

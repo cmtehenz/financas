@@ -13,7 +13,7 @@ export function AppHeader({
 }) {
   return (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex w-full max-w-[90rem] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-360 items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="min-w-0">
           <p className="text-sm font-medium tracking-[-0.01em]">Financeiro Familiar</p>
           {householdName ? (

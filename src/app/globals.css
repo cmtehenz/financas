@@ -109,7 +109,7 @@
 
 @layer utilities {
   .text-page-title {
-    @apply text-[1.5rem] leading-[1.25] font-semibold tracking-[-0.025em] sm:text-[1.625rem];
+    @apply text-[1.5rem] leading-tight font-semibold tracking-tight sm:text-[1.625rem];
   }
 
   .text-page-subtitle {
@@ -161,7 +161,7 @@
   }
 
   .data-table {
-    @apply w-full min-w-[44rem] border-collapse text-[0.875rem] leading-[1.45] tabular-nums;
+    @apply w-full min-w-176 border-collapse text-[0.875rem] leading-[1.45] tabular-nums;
   }
 
   .data-table th {

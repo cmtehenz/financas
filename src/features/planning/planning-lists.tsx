@@ -1,11 +1,14 @@
 "use client";
 
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { documentSubjectForBill, documentSubjectForIncome, type DocumentSubject } from "@/domain/documents";
 import { cn } from "@/lib/utils";
 import type { MonthlyPlanningBoard, PlanningBillRow } from "@/services/planning";
 
+import { PlannerDocumentsDialog } from "./documents-dialog";
 import { PlannerEditDialog, type PlannerEditItem } from "./edit-entry-dialog";
 import {
   applyPlannerListView,
@@ -29,10 +32,12 @@ export function PlanningLists({
   categories: CategoryOption[];
   today: string;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<"income" | "expense">("income");
   const [filter, setFilter] = useState<PlannerListFilter>("ALL");
   const [sort, setSort] = useState<PlannerListSort>("DATE");
   const [editing, setEditing] = useState<PlannerEditItem | null>(null);
+  const [files, setFiles] = useState<{ title: string; subject: DocumentSubject } | null>(null);
   const showingIncome = tab === "income";
   const incomes = applyPlannerListView(
     board.incomes.map((item) => ({ ...item, sortDate: item.expectedDate })),
@@ -48,6 +53,14 @@ export function PlanningLists({
   const visibleCount = showingIncome ? incomes.length : bills.length;
   const total = showingIncome ? board.totals.plannedIncomeLabel : board.totals.billsTotalLabel;
   const defaultAccountId = accounts.find((account) => account.active)?.id ?? "";
+
+  function documentsHandler(title: string, subject: DocumentSubject | null) {
+    if (!subject) {
+      return undefined;
+    }
+
+    return () => setFiles({ title, subject });
+  }
 
   return (
     <section className="space-y-4">
@@ -120,6 +133,7 @@ export function PlanningLists({
               <span>{showingIncome ? "Data" : "Vencimento"}</span>
               <span>Situação</span>
               <span className="text-right">Valor</span>
+              <span className="sr-only">Arquivos</span>
               <span className="sr-only">Ação</span>
             </div>
             <ul>
@@ -131,6 +145,8 @@ export function PlanningLists({
                       date={item.expectedDate}
                       amountLabel={item.amountLabel}
                       recurring={item.recurring}
+                      documentCount={item.documentCount}
+                      onDocuments={documentsHandler(item.description, documentSubjectForIncome(item.id))}
                       onEdit={() =>
                         setEditing({
                           transactionId: item.id,
@@ -166,6 +182,8 @@ export function PlanningLists({
                       date={item.dueDate}
                       amountLabel={item.amountLabel}
                       recurring={item.origin === "RECURRING"}
+                      documentCount={item.documentCount}
+                      onDocuments={documentsHandler(item.description, documentSubjectForBill(item))}
                       onEdit={
                         canEditBill(item)
                           ? () =>
@@ -208,6 +226,15 @@ export function PlanningLists({
           item={editing}
           categories={categories}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {files ? (
+        <PlannerDocumentsDialog
+          key={`${files.subject.subjectType}:${files.subject.subjectId}`}
+          title={files.title}
+          subject={files.subject}
+          onClose={() => setFiles(null)}
+          onChanged={() => router.refresh()}
         />
       ) : null}
     </section>

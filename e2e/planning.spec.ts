@@ -79,6 +79,22 @@ test("monthly planning keeps the selected month and works on mobile tabs", async
   await expect(page.getByText("Salário setembro")).toBeVisible();
   await page.getByRole("tab", { name: /Despesas/ }).click();
   await expect(page.getByText("Aluguel")).toBeVisible();
+  await page.locator("li", { hasText: "Aluguel" }).getByTestId("planner-documents-button").click();
+  const filesDialog = page.getByRole("dialog");
+  await expect(filesDialog.getByRole("heading", { name: "Arquivos" })).toBeVisible();
+  await filesDialog.getByLabel("Tipo").selectOption("BOLETO");
+  await filesDialog.getByTestId("planner-document-input").setInputFiles({
+    name: "boleto.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    ),
+  });
+  await filesDialog.getByRole("button", { name: "Adicionar arquivos" }).click();
+  await expect(filesDialog.getByText("boleto.png")).toBeVisible({ timeout: 15_000 });
+  await filesDialog.getByRole("button", { name: "Fechar" }).click();
+  await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.getByText("Destino:")).toHaveCount(0);
   await expect(page.getByText("Origem:")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Editar lançamento" }).first()).toBeVisible();

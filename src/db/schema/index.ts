@@ -15,6 +15,7 @@ export {
   debtInstallments,
   debts,
 } from "./cards-debts";
+export { householdDocuments } from "./documents";
 export {
   auditEvents,
   categoryBudgets,

@@ -43,6 +43,13 @@
       "when": 1755920000000,
       "tag": "0005_planning_amount_copy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1755930000000,
+      "tag": "0006_household_documents",
+      "breakpoints": true
     }
   ]
 }
