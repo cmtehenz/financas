@@ -117,6 +117,26 @@ test("monthly planning keeps the selected month and works on mobile tabs", async
   await recurringDialog.getByRole("button", { name: "Adicionar" }).click();
   await page.getByRole("tab", { name: /Despesas/ }).click();
   await expect(page.getByText("Guarda")).toBeVisible();
+  const billRows = page.getByTestId("planning-bills").locator("li");
+  await page.getByTestId("planner-sort-amount").click();
+  await expect(billRows.nth(0)).toContainText("Guarda");
+  await expect(billRows.nth(1)).toContainText("Aluguel");
+  await page.locator("li", { hasText: "Aluguel" }).getByTestId("planner-status-toggle").click();
+  await expect(page.locator("li", { hasText: "Aluguel" }).getByTestId("planner-status-toggle")).toHaveText(/Paga/, {
+    timeout: 15_000,
+  });
+  await page.getByTestId("planner-sort-paid").click();
+  await expect(billRows.nth(0)).toContainText("Aluguel");
+  await page.getByTestId("planner-filter-unpaid").click();
+  await expect(page.getByText("Guarda")).toBeVisible();
+  await expect(page.getByText("Aluguel")).toHaveCount(0);
+  await page.getByTestId("planner-filter-all").click();
+  await expect(page.getByText("Aluguel")).toBeVisible();
+  await page.getByTestId("planner-sort-date").click();
+  await page.locator("li", { hasText: "Aluguel" }).getByTestId("planner-status-toggle").click();
+  await expect(page.locator("li", { hasText: "Aluguel" }).getByTestId("planner-status-toggle")).toHaveText(/Não paga/, {
+    timeout: 15_000,
+  });
   if (testInfo.project.name === "mobile-chrome") {
     await expect(page.getByLabel("Recorrente")).toBeVisible();
   } else {

@@ -37,5 +37,23 @@ export function toPublicAuthError(error: unknown) {
     return "O endereço do site não está autorizado para login. Confira BETTER_AUTH_URL na Vercel.";
   }
 
+  if (
+    message.includes("database_url") ||
+    message.includes("better_auth_secret") ||
+    message.includes("missing required environment")
+  ) {
+    return "O ambiente de produção está incompleto. Confira DATABASE_URL e BETTER_AUTH_SECRET na Vercel.";
+  }
+
+  if (
+    message.includes("econnrefused") ||
+    message.includes("enotfound") ||
+    message.includes("connection terminated") ||
+    message.includes("websocket") ||
+    message.includes("connect timeout")
+  ) {
+    return "Não foi possível conectar ao banco agora. Tente novamente em instantes.";
+  }
+
   return "Não foi possível concluir a operação. Tente novamente.";
 }

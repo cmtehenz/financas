@@ -7,6 +7,11 @@ import { cn } from "@/lib/utils";
 import type { MonthlyPlanningBoard, PlanningBillRow } from "@/services/planning";
 
 import { PlannerEditDialog, type PlannerEditItem } from "./edit-entry-dialog";
+import {
+  applyPlannerListView,
+  type PlannerListFilter,
+  type PlannerListSort,
+} from "./planner-list-view";
 import { PLANNER_ROW_GRID, PlannerTransactionRow } from "./planner-transaction-row";
 import { PlannerStatusToggle } from "./planner-status-toggle";
 
@@ -25,9 +30,22 @@ export function PlanningLists({
   today: string;
 }) {
   const [tab, setTab] = useState<"income" | "expense">("income");
+  const [filter, setFilter] = useState<PlannerListFilter>("ALL");
+  const [sort, setSort] = useState<PlannerListSort>("DATE");
   const [editing, setEditing] = useState<PlannerEditItem | null>(null);
   const showingIncome = tab === "income";
-  const items = showingIncome ? board.incomes : board.bills;
+  const incomes = applyPlannerListView(
+    board.incomes.map((item) => ({ ...item, sortDate: item.expectedDate })),
+    filter,
+    sort,
+  );
+  const bills = applyPlannerListView(
+    board.bills.map((item) => ({ ...item, sortDate: item.dueDate })),
+    filter,
+    sort,
+  );
+  const sourceCount = showingIncome ? board.incomes.length : board.bills.length;
+  const visibleCount = showingIncome ? incomes.length : bills.length;
   const total = showingIncome ? board.totals.plannedIncomeLabel : board.totals.billsTotalLabel;
   const defaultAccountId = accounts.find((account) => account.active)?.id ?? "";
 
@@ -57,7 +75,7 @@ export function PlanningLists({
           </TabButton>
         </div>
 
-        <div className="flex items-baseline justify-between gap-3 px-0.5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-label">{showingIncome ? "Lista de receitas" : "Lista de despesas"}</p>
           <p
             className={cn(
@@ -68,6 +86,16 @@ export function PlanningLists({
             {total}
           </p>
         </div>
+
+        {sourceCount > 0 ? (
+          <PlannerListControls
+            kind={tab}
+            filter={filter}
+            sort={sort}
+            onFilter={setFilter}
+            onSort={setSort}
+          />
+        ) : null}
       </div>
 
       <div
@@ -75,9 +103,15 @@ export function PlanningLists({
         data-testid={showingIncome ? "planning-incomes" : "planning-bills"}
         className="space-y-3"
       >
-        {items.length === 0 ? (
+        {visibleCount === 0 ? (
           <p className="text-secondary" data-testid={board.empty ? "planning-empty" : undefined}>
-            {showingIncome ? "Nenhuma receita neste mês." : "Nenhuma despesa neste mês."}
+            {sourceCount > 0
+              ? showingIncome
+                ? "Nenhuma receita em aberto neste mês."
+                : "Nenhuma despesa em aberto neste mês."
+              : showingIncome
+                ? "Nenhuma receita neste mês."
+                : "Nenhuma despesa neste mês."}
           </p>
         ) : (
           <div>
@@ -90,7 +124,7 @@ export function PlanningLists({
             </div>
             <ul>
               {showingIncome
-                ? board.incomes.map((item) => (
+                ? incomes.map((item) => (
                     <PlannerTransactionRow
                       key={item.id}
                       description={item.description}
@@ -125,7 +159,7 @@ export function PlanningLists({
                       }
                     />
                   ))
-                : board.bills.map((item) => (
+                : bills.map((item) => (
                     <PlannerTransactionRow
                       key={item.id}
                       description={item.description}
@@ -177,6 +211,73 @@ export function PlanningLists({
         />
       ) : null}
     </section>
+  );
+}
+
+function PlannerListControls({
+  kind,
+  filter,
+  sort,
+  onFilter,
+  onSort,
+}: {
+  kind: "income" | "expense";
+  filter: PlannerListFilter;
+  sort: PlannerListSort;
+  onFilter: (value: PlannerListFilter) => void;
+  onSort: (value: PlannerListSort) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtro da lista">
+        <ControlChip selected={filter === "ALL"} onClick={() => onFilter("ALL")} testId="planner-filter-all">
+          Todas
+        </ControlChip>
+        <ControlChip selected={filter === "UNPAID"} onClick={() => onFilter("UNPAID")} testId="planner-filter-unpaid">
+          {kind === "income" ? "Falta receber" : "Falta pagar"}
+        </ControlChip>
+      </div>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Ordenação da lista">
+        <ControlChip selected={sort === "DATE"} onClick={() => onSort("DATE")} testId="planner-sort-date">
+          Data
+        </ControlChip>
+        <ControlChip selected={sort === "PAID_FIRST"} onClick={() => onSort("PAID_FIRST")} testId="planner-sort-paid">
+          {kind === "income" ? "Recebidas primeiro" : "Pagas primeiro"}
+        </ControlChip>
+        <ControlChip selected={sort === "AMOUNT_ASC"} onClick={() => onSort("AMOUNT_ASC")} testId="planner-sort-amount">
+          Menor valor
+        </ControlChip>
+      </div>
+    </div>
+  );
+}
+
+function ControlChip({
+  selected,
+  onClick,
+  testId,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  testId: string;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      data-testid={testId}
+      className={cn(
+        "inline-flex min-h-9 cursor-pointer items-center rounded-full border px-3 text-[0.8125rem] transition-colors",
+        selected
+          ? "border-border bg-card font-medium text-foreground shadow-[0_1px_2px_rgba(26,29,35,0.04)]"
+          : "border-transparent bg-transparent text-muted-foreground hover:bg-card hover:text-foreground",
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
 

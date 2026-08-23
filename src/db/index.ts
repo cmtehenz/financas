@@ -6,6 +6,11 @@ import * as schema from "./schema";
 
 neonConfig.webSocketConstructor = ws;
 
+// Vercel serverless cannot keep Neon WebSockets open across isolates.
+if (process.env.VERCEL) {
+  neonConfig.poolQueryViaFetch = true;
+}
+
 type Database = ReturnType<typeof createDb>;
 
 let db: Database | undefined;

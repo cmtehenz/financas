@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 async function databaseStatus() {
   try {
     if (!parseServerEnv().DATABASE_URL) {
-      return "unavailable" as const;
+      return "unconfigured" as const;
     }
 
     await getDb().execute(sql`select 1`);

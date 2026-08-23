@@ -149,7 +149,7 @@ export default async function TransactionsPage({
         <EmptyState>Nenhuma movimentação neste filtro.</EmptyState>
       ) : (
         <div className="surface overflow-x-auto">
-          <div className="text-label hidden min-w-[48rem] grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 lg:grid">
+          <div className="text-label hidden min-w-3xl grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 lg:grid">
             <span>Descrição</span>
             <span>Tipo e situação</span>
             <span>Data</span>
@@ -158,7 +158,7 @@ export default async function TransactionsPage({
           </div>
           <ul>
             {list.rows.map((item) => (
-              <li key={item.id} className="space-y-3 border-b border-border px-4 py-4 last:border-b-0 lg:grid lg:min-w-[48rem] lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] lg:items-center lg:gap-3 lg:space-y-0">
+              <li key={item.id} className="space-y-3 border-b border-border px-4 py-4 last:border-b-0 lg:grid lg:min-w-3xl lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] lg:items-center lg:gap-3 lg:space-y-0">
                 <div>
                   <p className="text-card-title">{item.description}</p>
                   <p className="mt-1 text-sm text-muted-foreground">

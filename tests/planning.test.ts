@@ -200,6 +200,29 @@ describe("planner date presentation", () => {
   });
 });
 
+describe("planner list view", () => {
+  it("filters unpaid items and sorts paid first or by amount", async () => {
+    const { applyPlannerListView } = await import("@/features/planning/planner-list-view");
+    const items = [
+      { id: "1", description: "Aluguel", visualStatus: "PAGA" as const, amountCents: "300000", sortDate: "2026-09-10" },
+      { id: "2", description: "Guarda", visualStatus: "PREVISTA" as const, amountCents: "4000", sortDate: "2026-09-05" },
+      { id: "3", description: "Luz", visualStatus: "VENCIDA" as const, amountCents: "15000", sortDate: "2026-09-02" },
+    ];
+
+    expect(applyPlannerListView(items, "UNPAID", "DATE").map((item) => item.description)).toEqual(["Luz", "Guarda"]);
+    expect(applyPlannerListView(items, "ALL", "PAID_FIRST").map((item) => item.description)).toEqual([
+      "Aluguel",
+      "Luz",
+      "Guarda",
+    ]);
+    expect(applyPlannerListView(items, "ALL", "AMOUNT_ASC").map((item) => item.description)).toEqual([
+      "Guarda",
+      "Luz",
+      "Aluguel",
+    ]);
+  });
+});
+
 describe("planner status labels", () => {
   it("uses the quick paid and received copy", async () => {
     const { statusLabel } = await import("@/features/planning/planner-status-toggle");
