@@ -12,17 +12,17 @@ export function AuthShell({
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background lg:flex-row">
       <aside className="flex flex-col justify-between border-b border-border bg-card px-6 py-8 lg:w-[40%] lg:border-r lg:border-b-0 lg:px-12 lg:py-16">
-        <p className="font-heading text-lg tracking-tight">Financeiro Familiar</p>
+        <p className="text-sm font-medium tracking-[-0.01em]">Financeiro Familiar</p>
         <div className="mt-10 max-w-md lg:mt-0">
-          <p className="font-heading text-3xl leading-tight text-foreground sm:text-4xl">
+          <p className="text-[1.75rem] leading-[1.2] font-semibold tracking-[-0.03em] sm:text-[2rem]">
             O dinheiro da casa, com clareza.
           </p>
-          <p className="mt-4 text-sm leading-6 text-muted-foreground sm:text-base">
+          <p className="text-secondary mt-4 sm:text-[0.9375rem]">
             Controle receitas, gastos, cartões e metas em um só lugar. Feito para
             Gustavo e sua esposa começarem simples e crescerem com segurança.
           </p>
         </div>
-        <p className="mt-10 hidden text-xs text-muted-foreground lg:block">
+        <p className="text-caption mt-10 hidden lg:block">
           Valores em Real brasileiro. Dados sempre isolados por Casa.
         </p>
       </aside>

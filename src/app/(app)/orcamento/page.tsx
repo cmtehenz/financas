@@ -44,7 +44,7 @@ export default async function BudgetPage({
           <>
             Mês {summary.monthKey} ·{" "}
             <Link href={`/planejamento?ano=${year}&mes=${month}`} className="underline">
-              Planejamento
+              Planner
             </Link>
             {" · "}
             <Link href="/dashboard" className="underline">
@@ -100,7 +100,7 @@ export default async function BudgetPage({
             {summary.expenseByCategory.map((item) => (
               <li key={item.categoryId} className="rounded-xl border border-border px-3 py-3 text-sm">
                 <div className="flex justify-between gap-3">
-                  <span>{item.name}</span>
+                  <span className="text-card-title">{item.name}</span>
                   <span className="text-money">
                     {formatBRL(item.usedCents)} / {formatBRL(item.limitCents)}
                   </span>
@@ -111,7 +111,7 @@ export default async function BudgetPage({
                   >
                     {ALERT_TEXT[item.alert]}
                   </StatusBadge>
-                  <span>
+                  <span className="tabular-nums">
                     {item.percent}% utilizado
                     {item.alert === "over" ? " ⚠" : item.alert === "warning" ? " !" : " · ok"}
                   </span>

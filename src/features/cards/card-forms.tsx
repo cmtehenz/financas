@@ -286,7 +286,7 @@ export function CardPurchaseForm({
       <Field id="notes" label="Observação" />
       {preview.length > 0 ? (
         <div className="surface p-4 text-sm">
-          <p className="font-medium">Prévia das parcelas</p>
+          <p className="text-card-title">Prévia das parcelas</p>
           <ul className="mt-2 space-y-1">
             {preview.map((item) => (
               <li key={item.installmentNumber}>

@@ -190,3 +190,24 @@ describe("planning statuses and amounts", () => {
     ).toBe(false);
   });
 });
+
+describe("planner date presentation", () => {
+  it("formats competence dates as a short day and month", async () => {
+    const { formatPlannerDate } = await import("@/features/planning/planner-transaction-row");
+    expect(formatPlannerDate("2026-09-10")).toBe("10 set");
+    expect(formatPlannerDate("2026-01-01")).toBe("1 jan");
+    expect(formatPlannerDate(null)).toBe("—");
+  });
+});
+
+describe("planner status labels", () => {
+  it("uses the quick paid and received copy", async () => {
+    const { statusLabel } = await import("@/features/planning/planner-status-toggle");
+    expect(statusLabel("expense", "PREVISTA")).toBe("Não paga");
+    expect(statusLabel("expense", "PAGA")).toBe("Paga");
+    expect(statusLabel("expense", "VENCIDA")).toBe("Atrasada");
+    expect(statusLabel("income", "PREVISTA")).toBe("Não recebida");
+    expect(statusLabel("income", "PAGA")).toBe("Recebida");
+    expect(statusLabel("income", "PENDENTE")).toBe("Não recebida");
+  });
+});

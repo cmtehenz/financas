@@ -80,7 +80,11 @@ export async function requireCompletedHousehold() {
   const onboarding = await toOnboardingHousehold(active);
   const pending = getPendingOnboardingPath(onboarding);
 
-  if (pending !== "/dashboard" || !active) {
+  if (!active) {
+    redirect(pending);
+  }
+
+  if (pending !== "/dashboard") {
     redirect(pending);
   }
 

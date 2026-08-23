@@ -4,11 +4,17 @@ import { ForbiddenError } from "@/lib/access";
 import { parseYearMonth, todayInSaoPaulo } from "@/lib/dates";
 import { requireHouseholdMembership } from "@/lib/require-household";
 import {
+  deleteTransactionSchema,
   transactionIdSchema,
   transactionSchema,
   updateTransactionSchema,
 } from "@/lib/validations/ledger";
-import { createRecurringRule, materializeRecurrencesForMonth } from "@/services/recurrences";
+import {
+  createRecurringRule,
+  deleteRecurringOccurrence,
+  materializeRecurrencesForMonth,
+  updateRecurringOccurrence,
+} from "@/services/recurrences";
 import { createTransaction, LedgerError, setTransactionStatus, updateTransaction } from "@/services/transactions";
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
@@ -107,6 +113,28 @@ export async function updateTransactionAction(input: unknown): Promise<ActionRes
 
   try {
     const { session, household } = await requireHouseholdMembership();
+    if (parsed.data.recurrenceScope) {
+      if (parsed.data.type === "TRANSFER") {
+        return { ok: false, error: "Transferência não pode ser recorrente." };
+      }
+
+      await updateRecurringOccurrence({
+        userId: session.user.id,
+        householdId: household.id,
+        transactionId: parsed.data.transactionId,
+        description: parsed.data.description,
+        amountCents: parsed.data.amountCents,
+        accountId: parsed.data.accountId,
+        categoryId: parsed.data.categoryId,
+        transactionDate: parsed.data.transactionDate,
+        dueDate: parsed.data.dueDate,
+        type: parsed.data.type,
+        status: parsed.data.status,
+        scope: parsed.data.recurrenceScope,
+      });
+      return { ok: true };
+    }
+
     await updateTransaction({
       userId: session.user.id,
       householdId: household.id,
@@ -142,7 +170,27 @@ export async function cancelTransactionAction(input: unknown): Promise<ActionRes
 }
 
 export async function deleteTransactionAction(input: unknown): Promise<ActionResult> {
-  return changeStatus(input, "CANCELLED", true);
+  const parsed = deleteTransactionSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Movimentação inválida." };
+  }
+
+  if (!parsed.data.recurrenceScope) {
+    return changeStatus(parsed.data, "CANCELLED", true);
+  }
+
+  try {
+    const { session, household } = await requireHouseholdMembership();
+    await deleteRecurringOccurrence({
+      userId: session.user.id,
+      householdId: household.id,
+      transactionId: parsed.data.transactionId,
+      scope: parsed.data.recurrenceScope,
+    });
+    return { ok: true };
+  } catch (error) {
+    return toError(error);
+  }
 }
 
 async function changeStatus(

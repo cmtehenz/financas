@@ -18,7 +18,12 @@ import {
   PlanningError,
   settlePlanningLedgerItem,
 } from "@/services/planning";
-import { createRecurringRule, materializeRecurrencesForMonth } from "@/services/recurrences";
+import {
+  createRecurringRule,
+  deleteRecurringOccurrence,
+  materializeRecurrencesForMonth,
+  updateRecurringOccurrence,
+} from "@/services/recurrences";
 import { createTransaction, LedgerError, setTransactionStatus } from "@/services/transactions";
 
 const canWrite = Boolean(process.env.TEST_DATABASE_URL);
@@ -427,5 +432,226 @@ describe.skipIf(!canWrite).sequential("monthly planning", { timeout: 40_000 }, (
     expect(september.bills.find((item) => item.description === "Internet 31")?.dueDate).toBe("2026-09-30");
     expect(july.bills.find((item) => item.description === "Internet 31")?.dueDate).toBe("2026-07-31");
     expect(september.bills.some((item) => item.dueDate === "2026-07-31")).toBe(false);
+  });
+
+  it("updates only this occurrence or this and future recurring months", async () => {
+    const owner = await insertUser("Owner Recurring Edit");
+    const house = await createHouseholdForUser({ userId: owner.id, name: "Casa Recurring Edit" });
+    createdHouseholdIds.push(house.household.id);
+    const account = await createFinancialAccount({
+      userId: owner.id,
+      householdId: house.household.id,
+      name: "Caixa",
+      type: "CASH",
+      openingBalanceCents: BigInt(1_000),
+      openingBalanceDate: "2026-08-01",
+    });
+    const cats = await listHouseholdCategories(house.household.id);
+    const moradia = cats.find((item) => item.slug === "moradia") ?? cats.find((item) => item.type === "EXPENSE")!;
+
+    await createRecurringRule({
+      userId: owner.id,
+      householdId: house.household.id,
+      accountId: account!.id,
+      categoryId: moradia.id,
+      description: "Guarda",
+      type: "EXPENSE",
+      amountCents: BigInt(4_000),
+      dueDay: 10,
+      startDate: "2026-09-01",
+      defaultStatus: "PLANNED",
+    });
+
+    await materializeRecurrencesForMonth({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 9,
+    });
+    await materializeRecurrencesForMonth({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 10,
+    });
+
+    const september = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 9,
+    });
+    const current = september.bills.find((item) => item.description === "Guarda")!;
+
+    await updateRecurringOccurrence({
+      userId: owner.id,
+      householdId: house.household.id,
+      transactionId: current.sourceId,
+      description: "Guarda",
+      amountCents: BigInt(6_000),
+      accountId: account!.id,
+      categoryId: moradia.id,
+      transactionDate: "2026-09-10",
+      dueDate: "2026-09-10",
+      type: "EXPENSE",
+      status: "PLANNED",
+      scope: "THIS",
+    });
+
+    const afterThis = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 10,
+    });
+    expect(afterThis.bills.find((item) => item.description === "Guarda")?.amountLabel).toBe("R$ 40,00");
+    expect(
+      (await getMonthlyPlanningBoard({
+        userId: owner.id,
+        householdId: house.household.id,
+        year: 2026,
+        month: 9,
+      })).bills.find((item) => item.description === "Guarda")?.amountLabel,
+    ).toBe("R$ 60,00");
+
+    await updateRecurringOccurrence({
+      userId: owner.id,
+      householdId: house.household.id,
+      transactionId: current.sourceId,
+      description: "Guarda mensal",
+      amountCents: BigInt(5_500),
+      accountId: account!.id,
+      categoryId: moradia.id,
+      transactionDate: "2026-09-10",
+      dueDate: "2026-09-10",
+      type: "EXPENSE",
+      status: "PLANNED",
+      scope: "THIS_AND_FUTURE",
+    });
+
+    const afterFutureSept = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 9,
+    });
+    const afterFutureOct = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 10,
+    });
+    expect(afterFutureSept.bills.find((item) => item.description === "Guarda mensal")?.amountLabel).toBe("R$ 55,00");
+    expect(afterFutureOct.bills.find((item) => item.description === "Guarda mensal")?.amountLabel).toBe("R$ 55,00");
+  });
+
+  it("deletes only this occurrence or this and future recurring months", async () => {
+    const owner = await insertUser("Owner Recurring Delete");
+    const house = await createHouseholdForUser({ userId: owner.id, name: "Casa Recurring Delete" });
+    createdHouseholdIds.push(house.household.id);
+    const account = await createFinancialAccount({
+      userId: owner.id,
+      householdId: house.household.id,
+      name: "Caixa",
+      type: "CASH",
+      openingBalanceCents: BigInt(1_000),
+      openingBalanceDate: "2026-08-01",
+    });
+    const cats = await listHouseholdCategories(house.household.id);
+    const moradia = cats.find((item) => item.slug === "moradia") ?? cats.find((item) => item.type === "EXPENSE")!;
+
+    await createRecurringRule({
+      userId: owner.id,
+      householdId: house.household.id,
+      accountId: account!.id,
+      categoryId: moradia.id,
+      description: "Luz",
+      type: "EXPENSE",
+      amountCents: BigInt(8_000),
+      dueDay: 5,
+      startDate: "2026-09-01",
+      defaultStatus: "PLANNED",
+    });
+    await materializeRecurrencesForMonth({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 9,
+    });
+    await materializeRecurrencesForMonth({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 10,
+    });
+
+    const september = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 9,
+    });
+    const current = september.bills.find((item) => item.description === "Luz")!;
+
+    await deleteRecurringOccurrence({
+      userId: owner.id,
+      householdId: house.household.id,
+      transactionId: current.sourceId,
+      scope: "THIS",
+    });
+
+    expect(
+      (await getMonthlyPlanningBoard({
+        userId: owner.id,
+        householdId: house.household.id,
+        year: 2026,
+        month: 9,
+      })).bills.find((item) => item.description === "Luz"),
+    ).toBeUndefined();
+    expect(
+      (await getMonthlyPlanningBoard({
+        userId: owner.id,
+        householdId: house.household.id,
+        year: 2026,
+        month: 10,
+      })).bills.find((item) => item.description === "Luz")?.amountLabel,
+    ).toBe("R$ 80,00");
+
+    const october = await getMonthlyPlanningBoard({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 10,
+    });
+    await deleteRecurringOccurrence({
+      userId: owner.id,
+      householdId: house.household.id,
+      transactionId: october.bills.find((item) => item.description === "Luz")!.sourceId,
+      scope: "THIS_AND_FUTURE",
+    });
+
+    await materializeRecurrencesForMonth({
+      userId: owner.id,
+      householdId: house.household.id,
+      year: 2026,
+      month: 11,
+    });
+
+    expect(
+      (await getMonthlyPlanningBoard({
+        userId: owner.id,
+        householdId: house.household.id,
+        year: 2026,
+        month: 10,
+      })).bills.find((item) => item.description === "Luz"),
+    ).toBeUndefined();
+    expect(
+      (await getMonthlyPlanningBoard({
+        userId: owner.id,
+        householdId: house.household.id,
+        year: 2026,
+        month: 11,
+      })).bills.find((item) => item.description === "Luz"),
+    ).toBeUndefined();
   });
 });

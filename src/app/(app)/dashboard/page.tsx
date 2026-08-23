@@ -37,7 +37,7 @@ export default async function DashboardPage() {
         actions={
           <>
             <Link href="/planejamento" className={cn(buttonVariants(), "h-11")}>
-              Planejamento do mês
+              Planner do mês
             </Link>
             <Link href="/orcamento" className={cn(buttonVariants({ variant: "outline" }), "h-11")}>
               Orçamento
@@ -47,13 +47,11 @@ export default async function DashboardPage() {
       />
 
       <section className="surface p-6 sm:p-8">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Saldo realmente disponível
-        </p>
-        <p className="text-money mt-3 text-4xl sm:text-5xl" data-testid="available-balance">
+        <p className="text-label">Saldo realmente disponível</p>
+        <p className="text-balance mt-3" data-testid="available-balance">
           {summary.availableLabel}
         </p>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+        <p className="text-secondary mt-4 max-w-2xl">
           Saldo atual da Casa (caixa já liquidado) + receitas pendentes − despesas
           pendentes − reserva de investimento − faturas não pagas com vencimento até o
           fim do mês. Faturas futuras entram só na projeção, não neste número.
@@ -95,14 +93,14 @@ export default async function DashboardPage() {
       {summary.overdueAlerts.length > 0 ? (
         <p className="text-sm text-warning">Há fatura ou dívida vencida ⚠</p>
       ) : null}
-      <p className="text-sm text-muted-foreground">
+      <p className="text-secondary">
         Limite usado {formatBRL(summary.cardUsedCents)} · faturas futuras {summary.futureStatements.length} ·
         maior compromisso {summary.peakCardCommitment ? `${summary.peakCardCommitment.monthKey}` : "—"}
       </p>
 
       <Surface>
         <h2 className="text-section-title">Investimento planejado</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-secondary mt-2">
           Planejado {formatBRL(summary.plannedInvestmentCents)} · realizado{" "}
           {formatBRL(summary.realizedInvestmentCents)} · já lançado{" "}
           {formatBRL(summary.pendingInvestmentCents)} · reserva{" "}
@@ -116,8 +114,8 @@ export default async function DashboardPage() {
           {summary.accountBalances
             .filter((account) => account.active)
             .map((account) => (
-              <li key={account.id} className="surface flex items-center justify-between px-4 py-3">
-                <span>{account.name}</span>
+              <li key={account.id} className="surface flex items-center justify-between px-4 py-3.5">
+                <span className="text-card-title">{account.name}</span>
                 <MoneyText testId={`account-balance-${account.name}`}>{formatBRL(account.balanceCents)}</MoneyText>
               </li>
             ))}
@@ -131,8 +129,8 @@ export default async function DashboardPage() {
         ) : (
           <ul className="mt-3 space-y-2">
             {summary.upcoming.map((item) => (
-              <li key={item.id} className="surface flex items-center justify-between px-4 py-3">
-                <span>{item.description}</span>
+              <li key={item.id} className="surface flex items-center justify-between px-4 py-3.5">
+                <span className="text-card-title">{item.description}</span>
                 <MoneyText>{formatBRL(item.amountCents)}</MoneyText>
               </li>
             ))}
@@ -168,11 +166,11 @@ export default async function DashboardPage() {
         <ul className="mt-3 grid gap-2 sm:grid-cols-3">
           {summary.evolution.map((item) => (
             <li key={item.month} className="surface px-4 py-3 text-sm">
-              <p className="font-medium">{item.month}</p>
-              <p className="text-muted-foreground">
+              <p className="text-card-title">{item.month}</p>
+              <p className="text-secondary">
                 Entradas <MoneyText tone="success">{formatBRL(item.incomeCents)}</MoneyText>
               </p>
-              <p className="text-muted-foreground">
+              <p className="text-secondary">
                 Saídas <MoneyText tone="danger">{formatBRL(item.expenseCents)}</MoneyText>
               </p>
             </li>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AuthShell } from "@/features/auth/auth-shell";
 import { SignupForm } from "@/features/auth/signup-form";
+import { redirectIfAuthenticated } from "@/lib/require-session";
 import { getSafeInternalPath } from "@/lib/safe-redirect";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default async function SignupPage({
 }) {
   const params = await searchParams;
   const next = getSafeInternalPath(params.next);
+  await redirectIfAuthenticated(next);
 
   return (
     <AuthShell

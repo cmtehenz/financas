@@ -75,7 +75,10 @@ export const transactionSchema = transactionFormFields.superRefine(refineTransac
 
 export const updateTransactionSchema = transactionFormFields
   .omit({ recurring: true, dueDay: true })
-  .extend({ transactionId: z.string().uuid() })
+  .extend({
+    transactionId: z.string().uuid(),
+    recurrenceScope: z.enum(["THIS", "THIS_AND_FUTURE"]).optional(),
+  })
   .superRefine(refineTransactionAmount)
   .transform((values) => ({
     ...values,
@@ -85,6 +88,10 @@ export const updateTransactionSchema = transactionFormFields
 
 export const transactionIdSchema = z.object({
   transactionId: z.string().uuid(),
+});
+
+export const deleteTransactionSchema = transactionIdSchema.extend({
+  recurrenceScope: z.enum(["THIS", "THIS_AND_FUTURE"]).optional(),
 });
 
 export const transactionFiltersSchema = z.object({

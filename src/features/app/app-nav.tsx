@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export const APP_LINKS = [
   { href: "/dashboard", label: "Início", icon: Home },
-  { href: "/planejamento", label: "Planejamento", icon: CalendarRange },
+  { href: "/planejamento", label: "Planner", icon: CalendarRange },
   { href: "/movimentacoes", label: "Movimentações", icon: ArrowLeftRight },
   { href: "/orcamento", label: "Orçamento", icon: PieChart },
   { href: "/cartoes", label: "Cartões", icon: CreditCard },
@@ -57,8 +57,8 @@ export function AppNav({
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm whitespace-nowrap transition-colors",
-              variant === "bottom" && "min-h-11 min-w-16 flex-col justify-center gap-1 px-2 text-[11px]",
+              "flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-medium whitespace-nowrap transition-colors",
+              variant === "bottom" && "min-h-11 min-w-16 flex-col justify-center gap-1 px-2 text-[11px] font-medium",
               variant === "menu" && "min-h-11",
               active
                 ? "bg-accent text-accent-foreground"

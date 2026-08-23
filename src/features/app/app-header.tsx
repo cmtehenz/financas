@@ -15,14 +15,14 @@ export function AppHeader({
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex w-full max-w-[90rem] items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="min-w-0">
-          <p className="font-heading text-sm tracking-tight">Financeiro Familiar</p>
+          <p className="text-sm font-medium tracking-[-0.01em]">Financeiro Familiar</p>
           {householdName ? (
-            <p className="truncate text-xs text-muted-foreground">{householdName}</p>
+            <p className="text-caption truncate">{householdName}</p>
           ) : null}
         </div>
         <div className="flex items-center gap-3">
           {userName ? (
-            <p className="hidden max-w-40 truncate text-sm text-muted-foreground sm:block">{userName}</p>
+            <p className="text-secondary hidden max-w-40 truncate sm:block">{userName}</p>
           ) : null}
           <LogoutButton />
         </div>

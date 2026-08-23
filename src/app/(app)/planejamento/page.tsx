@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
 
-import { PageHeader, PageShell } from "@/features/app/ui";
+import { PageShell } from "@/features/app/ui";
+import { PlanningAddControl } from "@/features/planning/add-entry-dialog";
 import { PlanningBoard } from "@/features/planning/planning-board";
+import { PlanningCopyForm } from "@/features/planning/planning-forms";
 import { PlanningMonthNav } from "@/features/planning/planning-month-nav";
 import { parsePlanningSearchParams } from "@/domain/planning";
-import { todayInSaoPaulo } from "@/lib/dates";
+import { occurrenceDate, todayInSaoPaulo } from "@/lib/dates";
 import { requireCompletedHousehold } from "@/lib/require-household";
 import { listHouseholdAccounts } from "@/services/accounts";
 import { listHouseholdCategories } from "@/services/categories";
-import { listHouseholdMembers } from "@/services/households";
 import { getMonthlyPlanningBoard } from "@/services/planning";
 import { materializeRecurrencesForMonth } from "@/services/recurrences";
 
 export const metadata: Metadata = {
-  title: "Planejamento",
+  title: "Planner",
 };
 
 export default async function PlanningPage({
@@ -33,7 +34,7 @@ export default async function PlanningPage({
     month,
   });
 
-  const [board, accounts, categories, members] = await Promise.all([
+  const [board, accounts, categories] = await Promise.all([
     getMonthlyPlanningBoard({
       userId: session.user.id,
       householdId: household.id,
@@ -42,24 +43,31 @@ export default async function PlanningPage({
     }),
     listHouseholdAccounts(household.id),
     listHouseholdCategories(household.id),
-    listHouseholdMembers(household.id),
   ]);
+  const defaultDate = occurrenceDate(year, month, Number(today.slice(8, 10)));
+  const defaultAccountId = accounts.find((account) => account.active)?.id ?? "";
 
   return (
     <PageShell width="wide" className="gap-6">
       <div className="space-y-4">
-        <PageHeader title="Planejamento" description={board.monthLabel} />
-        <PlanningMonthNav year={year} month={month} />
+        <header className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-page-title">Planner</h1>
+            <p className="text-page-subtitle mt-1">{board.monthLabel}</p>
+          </div>
+          <PlanningAddControl
+            defaultDate={defaultDate}
+            defaultAccountId={defaultAccountId}
+            categories={categories}
+          />
+        </header>
+        <PlanningMonthNav
+          year={year}
+          month={month}
+          extra={<PlanningCopyForm year={year} month={month} items={board.copyPreview} />}
+        />
       </div>
-      <PlanningBoard
-        board={board}
-        today={today}
-        lookups={{
-          accounts,
-          categories,
-          members: members.map((member) => ({ userId: member.userId, name: member.name })),
-        }}
-      />
+      <PlanningBoard board={board} accounts={accounts} categories={categories} today={today} />
     </PageShell>
   );
 }

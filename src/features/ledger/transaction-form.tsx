@@ -219,6 +219,10 @@ export function TransactionForm({
         </div>
       ) : null}
 
+      {transactionId && defaultValues?.recurring ? (
+        <p className="text-sm text-muted-foreground">Este lançamento é recorrente e continua se repetindo mensalmente.</p>
+      ) : null}
+
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}notes`}>Observação</Label>
         <Input id={`${idPrefix}notes`} className="h-11" {...form.register("notes")} />

@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 
 import { getDb, type AppDatabase } from "@/db";
 import { recurringRules, transactions } from "@/db/schema";
@@ -8,7 +8,14 @@ import type { Cents } from "@/types/money";
 
 import { recordAudit } from "./audit";
 import { assertHouseholdAccessForUser } from "./households";
-import { createTransaction, validateLedgerWrite } from "./transactions";
+import {
+  createTransaction,
+  getTransaction,
+  LedgerError,
+  setTransactionStatus,
+  updateTransaction,
+  validateLedgerWrite,
+} from "./transactions";
 
 type Db = AppDatabase;
 
@@ -93,6 +100,8 @@ export async function updateRecurringRule(
     description: string;
     amountCents: Cents;
     dueDay: number;
+    accountId?: string;
+    categoryId?: string;
     endDate?: string | null;
     defaultStatus: "PLANNED" | "PENDING";
     active?: boolean;
@@ -119,6 +128,8 @@ export async function updateRecurringRule(
       description: input.description.trim(),
       amountCents: input.amountCents,
       dueDay: input.dueDay,
+      accountId: input.accountId ?? existing.accountId,
+      categoryId: input.categoryId ?? existing.categoryId,
       endDate: input.endDate ?? null,
       defaultStatus: input.defaultStatus,
       active: input.active ?? existing.active,
@@ -242,4 +253,217 @@ export async function materializeRecurrencesForMonth(
   }
 
   return created;
+}
+
+export async function updateRecurringOccurrence(
+  input: {
+    userId: string;
+    householdId: string;
+    transactionId: string;
+    description: string;
+    amountCents: Cents;
+    accountId: string;
+    categoryId?: string | null;
+    transactionDate: string;
+    dueDate?: string | null;
+    type: "INCOME" | "EXPENSE";
+    status: "PLANNED" | "PENDING" | "PAID";
+    scope: "THIS" | "THIS_AND_FUTURE";
+  },
+  db: Db = getDb(),
+) {
+  const existing = await getTransaction(input.householdId, input.transactionId, db);
+  if (!existing || existing.deletedAt) {
+    throw new LedgerError("Movimentação não encontrada.", "NOT_FOUND");
+  }
+
+  const status =
+    existing.status === "PAID" || existing.status === "PENDING" || existing.status === "PLANNED"
+      ? (existing.status as "PLANNED" | "PENDING" | "PAID")
+      : input.status;
+
+  await updateTransaction(
+    {
+      userId: input.userId,
+      householdId: input.householdId,
+      transactionId: existing.id,
+      type: input.type,
+      description: input.description,
+      amountCents: input.amountCents,
+      accountId: input.accountId,
+      destinationAccountId: existing.destinationAccountId,
+      categoryId: input.categoryId,
+      assignedToUserId: existing.assignedToUserId,
+      transactionDate: input.transactionDate,
+      dueDate: input.dueDate,
+      status,
+      notes: existing.notes,
+    },
+    db,
+  );
+
+  if (input.scope !== "THIS_AND_FUTURE" || !existing.recurringRuleId) {
+    return;
+  }
+
+  const [rule] = await db
+    .select()
+    .from(recurringRules)
+    .where(and(eq(recurringRules.id, existing.recurringRuleId), eq(recurringRules.householdId, input.householdId)))
+    .limit(1);
+
+  if (!rule) {
+    return;
+  }
+
+  const dueDay = Number((input.dueDate || input.transactionDate).slice(8, 10));
+  const competence = existing.dueDate ?? existing.transactionDate;
+
+  await updateRecurringRule(
+    {
+      userId: input.userId,
+      householdId: input.householdId,
+      ruleId: rule.id,
+      description: input.description,
+      amountCents: input.amountCents,
+      dueDay,
+      accountId: input.accountId,
+      categoryId: input.categoryId ?? rule.categoryId,
+      endDate: rule.endDate,
+      defaultStatus: rule.defaultStatus === "PENDING" ? "PENDING" : "PLANNED",
+    },
+    db,
+  );
+
+  const siblings = await db
+    .select()
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.householdId, input.householdId),
+        eq(transactions.recurringRuleId, rule.id),
+        ne(transactions.id, existing.id),
+        sql`${transactions.deletedAt} is null`,
+      ),
+    );
+
+  for (const sibling of siblings) {
+    const siblingDate = sibling.dueDate ?? sibling.transactionDate;
+    if (siblingDate < competence) {
+      continue;
+    }
+
+    if (sibling.status === "PAID" || sibling.status === "CANCELLED") {
+      continue;
+    }
+
+    const period = parseYearMonth(siblingDate.slice(0, 7));
+    const nextDate = occurrenceDate(period.year, period.month, dueDay);
+
+    await updateTransaction(
+      {
+        userId: input.userId,
+        householdId: input.householdId,
+        transactionId: sibling.id,
+        type: sibling.type as "INCOME" | "EXPENSE",
+        description: input.description,
+        amountCents: input.amountCents,
+        accountId: input.accountId,
+        destinationAccountId: sibling.destinationAccountId,
+        categoryId: input.categoryId,
+        assignedToUserId: sibling.assignedToUserId,
+        transactionDate: nextDate,
+        dueDate: nextDate,
+        status: sibling.status === "PENDING" ? "PENDING" : "PLANNED",
+        notes: sibling.notes,
+      },
+      db,
+    );
+  }
+}
+
+export async function deleteRecurringOccurrence(
+  input: {
+    userId: string;
+    householdId: string;
+    transactionId: string;
+    scope: "THIS" | "THIS_AND_FUTURE";
+  },
+  db: Db = getDb(),
+) {
+  const existing = await getTransaction(input.householdId, input.transactionId, db);
+  if (!existing || existing.deletedAt) {
+    throw new LedgerError("Movimentação não encontrada.", "NOT_FOUND");
+  }
+
+  await setTransactionStatus(
+    {
+      userId: input.userId,
+      householdId: input.householdId,
+      transactionId: existing.id,
+      status: "CANCELLED",
+      softDelete: true,
+    },
+    db,
+  );
+
+  if (input.scope !== "THIS_AND_FUTURE" || !existing.recurringRuleId) {
+    return;
+  }
+
+  const [rule] = await db
+    .select()
+    .from(recurringRules)
+    .where(and(eq(recurringRules.id, existing.recurringRuleId), eq(recurringRules.householdId, input.householdId)))
+    .limit(1);
+
+  if (!rule) {
+    return;
+  }
+
+  const competence = existing.dueDate ?? existing.transactionDate;
+
+  await updateRecurringRule(
+    {
+      userId: input.userId,
+      householdId: input.householdId,
+      ruleId: rule.id,
+      description: rule.description,
+      amountCents: rule.amountCents,
+      dueDay: rule.dueDay,
+      endDate: competence,
+      defaultStatus: rule.defaultStatus === "PENDING" ? "PENDING" : "PLANNED",
+    },
+    db,
+  );
+
+  const siblings = await db
+    .select()
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.householdId, input.householdId),
+        eq(transactions.recurringRuleId, rule.id),
+        ne(transactions.id, existing.id),
+        sql`${transactions.deletedAt} is null`,
+      ),
+    );
+
+  for (const sibling of siblings) {
+    const siblingDate = sibling.dueDate ?? sibling.transactionDate;
+    if (siblingDate < competence || sibling.status === "PAID") {
+      continue;
+    }
+
+    await setTransactionStatus(
+      {
+        userId: input.userId,
+        householdId: input.householdId,
+        transactionId: sibling.id,
+        status: "CANCELLED",
+        softDelete: true,
+      },
+      db,
+    );
+  }
 }

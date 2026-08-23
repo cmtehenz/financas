@@ -1,5 +1,6 @@
 "use client";
 
+import { Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -213,12 +214,16 @@ export function PlanningCopyForm({
   }
 
   return (
-    <details className="surface p-4">
-      <summary className="cursor-pointer text-sm font-medium">Copiar planejamento do mês anterior</summary>
+    <details className="relative">
+      <summary className="flex h-10 cursor-pointer list-none items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
+        <Copy className="size-3.5" aria-hidden="true" />
+        Copiar mês anterior
+      </summary>
+      <div className="absolute right-0 z-20 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-4 shadow-[0_12px_32px_rgba(26,29,35,0.1)]">
       {items.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">Nada elegível no mês anterior.</p>
+        <p className="text-sm text-muted-foreground">Nada elegível no mês anterior.</p>
       ) : (
-        <form className="mt-4 space-y-3" action={onSubmit}>
+        <form className="space-y-3" action={onSubmit}>
           <fieldset>
             <legend className="sr-only">Itens do mês anterior</legend>
             <ul className="space-y-2">
@@ -244,6 +249,7 @@ export function PlanningCopyForm({
           </Button>
         </form>
       )}
+      </div>
     </details>
   );
 }

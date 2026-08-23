@@ -41,7 +41,7 @@ export default async function DebtsPage() {
               <li key={debt.id} className="surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">{debt.name}</p>
+                    <p className="text-card-title">{debt.name}</p>
                     <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                       <span>{debt.creditor}</span>
                       <StatusBadge tone={debt.status === "ACTIVE" ? "warning" : "neutral"}>{debt.status}</StatusBadge>

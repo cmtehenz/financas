@@ -48,7 +48,7 @@ export default async function CardsPage() {
               <li key={card.id} className="surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium">
+                    <p className="text-card-title">
                       {card.name}
                       {card.active ? "" : " · desativado"}
                     </p>

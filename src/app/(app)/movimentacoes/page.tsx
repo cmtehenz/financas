@@ -74,13 +74,13 @@ export default async function TransactionsPage({
 
       <form className="surface grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3" method="get">
         <div className="space-y-1.5">
-          <label htmlFor="filtro-mes" className="text-sm font-medium">
+          <label htmlFor="filtro-mes" className="text-label">
             Mês
           </label>
           <input id="filtro-mes" type="month" name="mes" defaultValue={filters.month} className="field-control" />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="filtro-q" className="text-sm font-medium">
+          <label htmlFor="filtro-q" className="text-label">
             Buscar
           </label>
           <input
@@ -92,7 +92,7 @@ export default async function TransactionsPage({
           />
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="filtro-conta" className="text-sm font-medium">
+          <label htmlFor="filtro-conta" className="text-label">
             Conta
           </label>
           <select id="filtro-conta" name="conta" defaultValue={filters.accountId ?? ""} className="field-control">
@@ -105,7 +105,7 @@ export default async function TransactionsPage({
           </select>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="filtro-categoria" className="text-sm font-medium">
+          <label htmlFor="filtro-categoria" className="text-label">
             Categoria
           </label>
           <select id="filtro-categoria" name="categoria" defaultValue={filters.categoryId ?? ""} className="field-control">
@@ -118,7 +118,7 @@ export default async function TransactionsPage({
           </select>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="filtro-tipo" className="text-sm font-medium">
+          <label htmlFor="filtro-tipo" className="text-label">
             Tipo
           </label>
           <select id="filtro-tipo" name="tipo" defaultValue={filters.type ?? ""} className="field-control">
@@ -129,7 +129,7 @@ export default async function TransactionsPage({
           </select>
         </div>
         <div className="space-y-1.5">
-          <label htmlFor="filtro-situacao" className="text-sm font-medium">
+          <label htmlFor="filtro-situacao" className="text-label">
             Situação
           </label>
           <select id="filtro-situacao" name="situacao" defaultValue={filters.status ?? ""} className="field-control">
@@ -149,7 +149,7 @@ export default async function TransactionsPage({
         <EmptyState>Nenhuma movimentação neste filtro.</EmptyState>
       ) : (
         <div className="surface overflow-x-auto">
-          <div className="hidden min-w-[48rem] grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:grid">
+          <div className="text-label hidden min-w-[48rem] grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 lg:grid">
             <span>Descrição</span>
             <span>Tipo e situação</span>
             <span>Data</span>
@@ -160,7 +160,7 @@ export default async function TransactionsPage({
             {list.rows.map((item) => (
               <li key={item.id} className="space-y-3 border-b border-border px-4 py-4 last:border-b-0 lg:grid lg:min-w-[48rem] lg:grid-cols-[minmax(0,1.6fr)_minmax(10rem,auto)_8rem_8rem_minmax(12rem,auto)] lg:items-center lg:gap-3 lg:space-y-0">
                 <div>
-                  <p className="font-medium">{item.description}</p>
+                  <p className="text-card-title">{item.description}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {item.type === "TRANSFER"
                       ? `${accounts.find((account) => account.id === item.accountId)?.name ?? "Conta"} → ${accounts.find((account) => account.id === item.destinationAccountId)?.name ?? "Destino"}`

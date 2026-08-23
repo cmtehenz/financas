@@ -43,7 +43,7 @@ function toError(error: unknown): ActionResult {
     return { ok: false, error: error.message };
   }
 
-  return { ok: false, error: "Não foi possível atualizar o planejamento." };
+  return { ok: false, error: "Não foi possível atualizar o planner." };
 }
 
 export async function settlePlanningItemAction(input: unknown): Promise<ActionResult> {

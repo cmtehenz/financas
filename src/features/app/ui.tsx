@@ -14,7 +14,7 @@ export function PageShell({
   return (
     <div
       className={cn(
-        "mx-auto flex w-full flex-1 flex-col gap-8 px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-10",
+        "mx-auto flex w-full flex-1 flex-col gap-9 px-4 py-6 pb-24 sm:px-6 sm:py-9 lg:pb-10",
         width === "narrow" && "max-w-3xl",
         width === "default" && "max-w-5xl",
         width === "wide" && "max-w-6xl",
@@ -72,11 +72,11 @@ export function StatCard({
   tone?: "default" | "success" | "danger" | "warning";
 }) {
   return (
-    <article className="surface p-4">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{label}</p>
+    <article className="surface p-5">
+      <p className="text-label">{label}</p>
       <p
         className={cn(
-          "text-money mt-2 text-2xl",
+          "text-money mt-2 text-[1.375rem] leading-none",
           tone === "success" && "text-success",
           tone === "danger" && "text-danger",
           tone === "warning" && "text-warning",
@@ -85,7 +85,7 @@ export function StatCard({
       >
         {value}
       </p>
-      {hint ? <p className="mt-1 text-sm text-muted-foreground">{hint}</p> : null}
+      {hint ? <p className="text-caption mt-2">{hint}</p> : null}
     </article>
   );
 }
@@ -127,7 +127,7 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[0.75rem] font-medium",
         tone === "neutral" && "bg-muted text-muted-foreground",
         tone === "success" && "bg-emerald-50 text-success",
         tone === "warning" && "bg-amber-50 text-warning",
@@ -152,7 +152,7 @@ export function EmptyState({
   return (
     <p
       data-testid={testId}
-      className={cn("surface border-dashed p-6 text-sm text-muted-foreground", className)}
+      className={cn("text-secondary surface border-dashed p-6", className)}
     >
       {children}
     </p>
@@ -173,7 +173,7 @@ export function SectionTitle({
   return (
     <div className="flex items-end justify-between gap-3">
       <h2 className="text-section-title">{children}</h2>
-      {extra ? <div className="text-sm text-muted-foreground">{extra}</div> : null}
+      {extra ? <div className="text-secondary">{extra}</div> : null}
     </div>
   );
 }

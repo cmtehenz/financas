@@ -3,8 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { getSafeInternalPath } from "@/lib/safe-redirect";
 
-const AUTH_PATHS = new Set(["/login", "/cadastro", "/recuperar-acesso"]);
-
 function isAppPath(pathname: string) {
   return (
     pathname.startsWith("/dashboard") ||
@@ -24,13 +22,8 @@ export function proxy(request: NextRequest) {
 
   if (isAppPath(pathname) && !sessionCookie) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", getSafeInternalPath(pathname));
+    loginUrl.searchParams.set("next", getSafeInternalPath(`${pathname}${request.nextUrl.search}`));
     return NextResponse.redirect(loginUrl);
-  }
-
-  if (AUTH_PATHS.has(pathname) && sessionCookie) {
-    const next = getSafeInternalPath(request.nextUrl.searchParams.get("next"));
-    return NextResponse.redirect(new URL(next, request.url));
   }
 
   return NextResponse.next();

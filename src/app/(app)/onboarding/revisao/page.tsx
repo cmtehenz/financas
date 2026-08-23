@@ -52,7 +52,7 @@ export default async function OnboardingReviewPage() {
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Soma dos saldos iniciais</dt>
-          <dd className="mt-1 font-medium">{formatBRL(dashboard.availableCents)}</dd>
+          <dd className="text-money mt-1">{formatBRL(dashboard.availableCents)}</dd>
         </div>
         <div>
           <dt className="text-sm text-muted-foreground">Categorias iniciais</dt>

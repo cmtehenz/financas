@@ -43,7 +43,7 @@ export default async function OnboardingAccountsPage() {
         <ul className="space-y-3">
           {accounts.map((account) => (
             <li key={account.id} className="surface px-4 py-3">
-              <p className="font-medium">{account.name}</p>
+              <p className="text-card-title">{account.name}</p>
               <p className="text-sm text-muted-foreground">
                 {FINANCIAL_ACCOUNT_TYPE_LABELS[account.type as FinancialAccountType] ?? account.type}
                 {account.institutionName ? ` · ${account.institutionName}` : ""}

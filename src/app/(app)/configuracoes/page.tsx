@@ -58,7 +58,7 @@ export default async function SettingsPage() {
         <ul className="space-y-2">
           {members.map((member) => (
             <li key={member.id} className="surface px-4 py-3">
-              <p className="font-medium">{member.name}</p>
+              <p className="text-card-title">{member.name}</p>
               <p className="text-sm text-muted-foreground">
                 {member.role === "OWNER" ? "Responsável" : "Membro"}
               </p>
@@ -91,7 +91,7 @@ export default async function SettingsPage() {
               <li key={account.id} className="surface space-y-3 p-4">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p className="font-medium">{account.name}</p>
+                    <p className="text-card-title">{account.name}</p>
                     <p className="text-sm text-muted-foreground">
                       {FINANCIAL_ACCOUNT_TYPE_LABELS[account.type as FinancialAccountType] ??
                         account.type}
@@ -126,7 +126,7 @@ export default async function SettingsPage() {
         )}
         {isOwner ? (
           <Surface className="border-dashed">
-            <h3 className="font-medium">Nova conta</h3>
+            <h3 className="text-section-title">Nova conta</h3>
             <div className="mt-4">
               <AccountForm defaultDate={todayInSaoPaulo()} submitLabel="Adicionar conta" />
             </div>
@@ -140,7 +140,7 @@ export default async function SettingsPage() {
           {categoryRows.map((category) => (
             <li key={category.id} className="surface flex items-center justify-between gap-3 px-4 py-3">
               <div>
-                <p className="font-medium">{category.name}</p>
+                <p className="text-card-title">{category.name}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <StatusBadge tone={category.type === "INCOME" ? "success" : "danger"}>
                     {category.type === "INCOME" ? "Receita" : "Despesa"}

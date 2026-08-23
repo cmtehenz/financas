@@ -102,7 +102,7 @@ export default async function CardDetailPage({ params }: { params: Promise<{ id:
           <ul className="mt-3 space-y-2">
             {detail.purchases.map((purchase) => (
               <li key={purchase.id} className="surface px-4 py-3">
-                <p className="font-medium">{purchase.description}</p>
+                <p className="text-card-title">{purchase.description}</p>
                 <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <span className="text-money">{formatBRL(purchase.totalAmountCents)}</span>
                   <span>{purchase.installmentCount}x</span>

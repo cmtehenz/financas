@@ -62,6 +62,8 @@ export type PlanningIncomeRow = {
   statusLabel: string;
   canReceive: boolean;
   recurring: boolean;
+  categoryId: string;
+  status: "PLANNED" | "PENDING" | "PAID";
 };
 
 export type PlanningBillRow = {
@@ -79,6 +81,9 @@ export type PlanningBillRow = {
   visualStatus: PlanningVisualStatus;
   statusLabel: string;
   canPay: boolean;
+  categoryId?: string;
+  accountId?: string;
+  status?: "PLANNED" | "PENDING" | "PAID";
   statementId?: string;
   pendingLabel?: string;
   debtId?: string;
@@ -129,6 +134,14 @@ function sortByDate(left: string | null, right: string | null) {
 
 function dueDateLabel(dueDate: string | null) {
   return dueDate ? dueDate.split("-").reverse().join("/") : "Sem vencimento";
+}
+
+function planningEditStatus(status: string): "PLANNED" | "PENDING" | "PAID" {
+  if (status === "PAID" || status === "PENDING") {
+    return status;
+  }
+
+  return "PLANNED";
 }
 
 export async function getMonthlyPlanningBoard(
@@ -191,6 +204,8 @@ export async function getMonthlyPlanningBoard(
         statusLabel: PLANNING_INCOME_STATUS_LABELS[visualStatus],
         canReceive: canMarkPlanningItemPaid({ amountCents: item.amountCents, visualStatus }),
         recurring: Boolean(item.recurringRuleId),
+        categoryId: item.categoryId ?? "",
+        status: planningEditStatus(item.status),
       };
     })
     .sort((left, right) => sortByDate(left.expectedDate, right.expectedDate) || left.description.localeCompare(right.description));
@@ -226,6 +241,9 @@ export async function getMonthlyPlanningBoard(
         visualStatus,
         statusLabel: PLANNING_VISUAL_STATUS_LABELS[visualStatus],
         canPay: canMarkPlanningItemPaid({ amountCents: item.amountCents, visualStatus }),
+        categoryId: item.categoryId ?? "",
+        accountId: item.accountId,
+        status: planningEditStatus(item.status),
       };
     });
 
@@ -440,7 +458,7 @@ export async function copyPreviousMonthPlanning(input: {
   );
 
   if (pending.length === 0) {
-    throw new PlanningError("Este planejamento já foi copiado para o mês.", "DUPLICATE_COPY");
+    throw new PlanningError("Este planner já foi copiado para o mês.", "DUPLICATE_COPY");
   }
 
   let created = 0;

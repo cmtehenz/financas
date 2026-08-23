@@ -57,6 +57,7 @@ export default async function EditTransactionPage({
                 ? transaction.status
                 : "PLANNED",
             notes: transaction.notes ?? "",
+            recurring: Boolean(transaction.recurringRuleId),
           }}
         />
       </Surface>

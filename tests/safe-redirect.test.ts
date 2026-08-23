@@ -9,6 +9,8 @@ describe("getSafeInternalPath", () => {
     expect(getSafeInternalPath("/cartoes/novo")).toBe("/cartoes/novo");
     expect(getSafeInternalPath("/dividas/nova")).toBe("/dividas/nova");
     expect(getSafeInternalPath("/onboarding/contas")).toBe("/onboarding/contas");
+    expect(getSafeInternalPath("/planejamento")).toBe("/planejamento");
+    expect(getSafeInternalPath("/planejamento?ano=2026&mes=9")).toBe("/planejamento");
     expect(getSafeInternalPath("/convite/abcdefghijklmnopqrstuvwxyz012345")).toBe(
       "/convite/abcdefghijklmnopqrstuvwxyz012345",
     );
