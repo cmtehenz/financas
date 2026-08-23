@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeader, PageShell, Surface } from "@/features/app/ui";
 import { CreditCardForm } from "@/features/cards/card-forms";
 import { requireCompletedHousehold } from "@/lib/require-household";
 import { listHouseholdMembers } from "@/services/households";
@@ -13,12 +14,11 @@ export default async function NewCardPage() {
   const members = await listHouseholdMembers(household.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6">
-      <h1 className="font-heading text-3xl tracking-tight">Novo cartão</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Não pedimos número completo, CVV ou senha.</p>
-      <div className="mt-8">
+    <PageShell width="narrow">
+      <PageHeader title="Novo cartão" description="Não pedimos número completo, CVV ou senha." />
+      <Surface>
         <CreditCardForm members={members} />
-      </div>
-    </div>
+      </Surface>
+    </PageShell>
   );
 }

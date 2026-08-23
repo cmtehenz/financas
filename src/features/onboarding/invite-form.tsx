@@ -104,7 +104,7 @@ export function InviteForm({
         </Button>
       </form>
       {inviteUrl ? (
-        <div className="space-y-2 rounded-2xl border border-border bg-card p-4">
+        <div className="surface space-y-2 p-4">
           <Label htmlFor="invite-link">Link para compartilhar</Label>
           <Input id="invite-link" data-testid="invite-link" readOnly className="h-11" value={inviteUrl} />
           <Button type="button" variant="outline" className="h-11 w-full" onClick={copyLink}>
@@ -117,7 +117,7 @@ export function InviteForm({
           {pendingInvites.map((invite) => (
             <li
               key={invite.id}
-              className="flex flex-col gap-2 rounded-2xl border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="surface flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="text-sm font-medium">{invite.email}</p>

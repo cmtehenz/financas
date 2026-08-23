@@ -9,6 +9,7 @@ import {
   EditCreditCardForm,
   StatementPaymentForm,
 } from "@/features/cards/card-forms";
+import { EmptyState, PageHeader, PageShell, SectionTitle, StatCard, StatusBadge, Surface } from "@/features/app/ui";
 import { monthlyCardCommitments, peakCommitmentMonth } from "@/domain/cards";
 import { formatBRL } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -55,145 +56,137 @@ export default async function CardDetailPage({ params }: { params: Promise<{ id:
   const history = detail.statements.filter((item) => item.status !== "OPEN");
 
   return (
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
-        <header className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="font-heading text-3xl tracking-tight">{detail.card.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {detail.card.issuer} ·{" "}
-              {members.find((member) => member.userId === detail.card.holderUserId)?.name ?? "Titular"}
-            </p>
-          </div>
-          {detail.card.active ? (
+    <PageShell>
+      <PageHeader
+        title={detail.card.name}
+        description={`${detail.card.issuer} · ${members.find((member) => member.userId === detail.card.holderUserId)?.name ?? "Titular"}`}
+        actions={
+          detail.card.active ? (
             <Link href={`/cartoes/${detail.card.id}/compras/nova`} className={cn(buttonVariants(), "h-11")}>
               Nova compra
             </Link>
           ) : (
             <p className="text-sm text-muted-foreground">Cartão desativado — só consulta.</p>
-          )}
-        </header>
+          )
+        }
+      />
 
-        <section className="grid gap-3 sm:grid-cols-3">
-          <Stat label="Limite" value={formatBRL(detail.card.limitCents)} />
-          <Stat label="Utilizado" value={formatBRL(detail.usedCents)} />
-          <Stat label="Disponível" value={formatBRL(detail.availableLimitCents)} testId="card-available" />
-        </section>
-        {detail.availableLimitCents < BigInt(0) ? <p>Limite ultrapassado ⚠</p> : null}
-        {!detail.card.active ? <p className="text-sm">Este cartão está desativado. O histórico permanece.</p> : null}
+      <section className="grid gap-3 sm:grid-cols-3">
+        <StatCard label="Limite" value={formatBRL(detail.card.limitCents)} />
+        <StatCard label="Utilizado" value={formatBRL(detail.usedCents)} />
+        <StatCard label="Disponível" value={formatBRL(detail.availableLimitCents)} testId="card-available" />
+      </section>
+      {detail.availableLimitCents < BigInt(0) ? <p className="text-sm text-danger">Limite ultrapassado ⚠</p> : null}
+      {!detail.card.active ? <p className="text-sm">Este cartão está desativado. O histórico permanece.</p> : null}
 
-        <section className="rounded-2xl border border-border p-4">
-          <h2 className="font-medium">Configurações do cartão</h2>
-          <div className="mt-4">
-            <EditCreditCardForm card={detail.card} />
-          </div>
-          <div className="mt-4">
-            <CardActiveButton creditCardId={detail.card.id} active={detail.card.active} />
-          </div>
-        </section>
-        {peak ? (
-          <p className="text-sm text-muted-foreground">
-            Maior compromisso: {peak.monthKey} · {formatBRL(peak.amountCents)}
-          </p>
-        ) : null}
+      <Surface>
+        <SectionTitle>Configurações do cartão</SectionTitle>
+        <div className="mt-4">
+          <EditCreditCardForm card={detail.card} />
+        </div>
+        <div className="mt-4">
+          <CardActiveButton creditCardId={detail.card.id} active={detail.card.active} />
+        </div>
+      </Surface>
+      {peak ? (
+        <p className="text-sm text-muted-foreground">
+          Maior compromisso: {peak.monthKey} · {formatBRL(peak.amountCents)}
+        </p>
+      ) : null}
 
-        <section>
-          <h2 className="font-medium">Compras</h2>
+      <section>
+        <SectionTitle>Compras</SectionTitle>
+        {detail.purchases.length === 0 ? (
+          <EmptyState className="mt-3">Nenhuma compra cadastrada.</EmptyState>
+        ) : (
           <ul className="mt-3 space-y-2">
             {detail.purchases.map((purchase) => (
-              <li key={purchase.id} className="rounded-2xl border border-border px-4 py-3">
+              <li key={purchase.id} className="surface px-4 py-3">
                 <p className="font-medium">{purchase.description}</p>
-                <p className="text-sm text-muted-foreground">
-                  {formatBRL(purchase.totalAmountCents)} · {purchase.installmentCount}x · {purchase.status}
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                  <span className="text-money">{formatBRL(purchase.totalAmountCents)}</span>
+                  <span>{purchase.installmentCount}x</span>
+                  <StatusBadge tone={purchase.status === "ACTIVE" ? "info" : "neutral"}>{purchase.status}</StatusBadge>
                 </p>
                 {purchase.status === "ACTIVE" ? <CancelPurchaseButton purchaseId={purchase.id} /> : null}
               </li>
             ))}
           </ul>
-        </section>
+        )}
+      </section>
 
-        <section>
-          <h2 className="font-medium">Fatura aberta</h2>
-          {open.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">Nenhuma fatura aberta.</p>
-          ) : (
-            open.map((statement) => (
-              <article key={statement.id} className="mt-3 rounded-2xl border border-border p-4">
-                <p>
-                  {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} · pendente{" "}
-                  {formatBRL(statement.pendingCents)} · vence {statement.dueDate}
-                </p>
-                {statement.pendingCents > BigInt(0) ? (
-                  <div className="mt-4">
-                    <StatementPaymentForm
-                      statementId={statement.id}
-                      pendingLabel={formatBRL(statement.pendingCents)}
-                      accounts={accounts}
-                      defaultDate={today}
-                    />
-                  </div>
-                ) : null}
-              </article>
-            ))
-          )}
-        </section>
+      <section>
+        <SectionTitle>Fatura aberta</SectionTitle>
+        {open.length === 0 ? (
+          <EmptyState className="mt-3">Nenhuma fatura aberta.</EmptyState>
+        ) : (
+          open.map((statement) => (
+            <article key={statement.id} className="surface mt-3 p-4">
+              <p>
+                {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} · pendente{" "}
+                {formatBRL(statement.pendingCents)} · vence {statement.dueDate}
+              </p>
+              {statement.pendingCents > BigInt(0) ? (
+                <div className="mt-4">
+                  <StatementPaymentForm
+                    statementId={statement.id}
+                    pendingLabel={formatBRL(statement.pendingCents)}
+                    accounts={accounts}
+                    defaultDate={today}
+                  />
+                </div>
+              ) : null}
+            </article>
+          ))
+        )}
+      </section>
 
-        <section>
-          <h2 className="font-medium">Faturas futuras</h2>
-          <ul className="mt-3 space-y-2" data-testid="future-statements">
-            {future.map((statement) => (
-              <li key={statement.id} className="rounded-2xl border border-border px-4 py-3 text-sm">
-                {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} ·{" "}
-                {formatBRL(statement.totalCents)} · vence {statement.dueDate}
+      <section>
+        <SectionTitle>Faturas futuras</SectionTitle>
+        <ul className="mt-3 space-y-2" data-testid="future-statements">
+          {future.map((statement) => (
+            <li key={statement.id} className="surface px-4 py-3 text-sm">
+              {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} ·{" "}
+              {formatBRL(statement.totalCents)} · vence {statement.dueDate}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <SectionTitle>Histórico</SectionTitle>
+        <ul className="mt-3 space-y-2">
+          {history.map((statement) => (
+            <li key={statement.id} className="surface px-4 py-3 text-sm">
+              {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} · {statement.status} ·{" "}
+              {formatBRL(statement.pendingCents)}
+              {statement.pendingCents > BigInt(0) && statement.status !== "OPEN" ? (
+                <div className="mt-3">
+                  <StatementPaymentForm
+                    statementId={statement.id}
+                    pendingLabel={formatBRL(statement.pendingCents)}
+                    accounts={accounts}
+                    defaultDate={today}
+                  />
+                </div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <SectionTitle>Compromissos por mês</SectionTitle>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+          {commitments
+            .filter((item) => item.amountCents > BigInt(0))
+            .map((item) => (
+              <li key={item.monthKey} className="surface px-4 py-3 text-sm">
+                {item.monthKey} · {formatBRL(item.amountCents)}
               </li>
             ))}
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="font-medium">Histórico</h2>
-          <ul className="mt-3 space-y-2">
-            {history.map((statement) => (
-              <li key={statement.id} className="rounded-2xl border border-border px-4 py-3 text-sm">
-                {statement.referenceYear}-{String(statement.referenceMonth).padStart(2, "0")} · {statement.status} ·{" "}
-                {formatBRL(statement.pendingCents)}
-                {statement.pendingCents > BigInt(0) && statement.status !== "OPEN" ? (
-                  <div className="mt-3">
-                    <StatementPaymentForm
-                      statementId={statement.id}
-                      pendingLabel={formatBRL(statement.pendingCents)}
-                      accounts={accounts}
-                      defaultDate={today}
-                    />
-                  </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="font-medium">Compromissos por mês</h2>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-            {commitments
-              .filter((item) => item.amountCents > BigInt(0))
-              .map((item) => (
-                <li key={item.monthKey} className="rounded-2xl border border-border px-4 py-3 text-sm">
-                  {item.monthKey} · {formatBRL(item.amountCents)}
-                </li>
-              ))}
-          </ul>
-        </section>
-      </div>
-  );
-}
-
-function Stat({ label, value, testId }: { label: string; value: string; testId?: string }) {
-  return (
-    <article className="rounded-2xl border border-border px-4 py-3">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-heading mt-1 text-2xl" data-testid={testId}>
-        {value}
-      </p>
-    </article>
+        </ul>
+      </section>
+    </PageShell>
   );
 }

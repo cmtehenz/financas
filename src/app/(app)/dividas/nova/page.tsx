@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeader, PageShell, Surface } from "@/features/app/ui";
 import { DebtForm } from "@/features/debts/debt-forms";
 import { todayInSaoPaulo } from "@/lib/dates";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -14,11 +15,11 @@ export default async function NewDebtPage() {
   const categories = await listHouseholdCategories(household.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6">
-      <h1 className="font-heading text-3xl tracking-tight">Nova dívida</h1>
-      <div className="mt-8">
+    <PageShell width="narrow">
+      <PageHeader title="Nova dívida" />
+      <Surface>
         <DebtForm categories={categories} defaultDate={todayInSaoPaulo()} />
-      </div>
-    </div>
+      </Surface>
+    </PageShell>
   );
 }

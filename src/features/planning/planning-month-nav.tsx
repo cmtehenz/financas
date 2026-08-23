@@ -15,7 +15,7 @@ export function PlanningMonthNav({
       <div className="flex items-center justify-between gap-3">
         <Link
           href={planningPath(year - 1, month)}
-          className="rounded-lg border border-border px-3 py-2 text-sm"
+          className="inline-flex min-h-11 items-center rounded-xl border border-border bg-card px-3 text-sm"
           data-testid="planning-prev-year"
         >
           Ano anterior
@@ -25,7 +25,7 @@ export function PlanningMonthNav({
         </p>
         <Link
           href={planningPath(year + 1, month)}
-          className="rounded-lg border border-border px-3 py-2 text-sm"
+          className="inline-flex min-h-11 items-center rounded-xl border border-border bg-card px-3 text-sm"
           data-testid="planning-next-year"
         >
           Próximo ano
@@ -45,8 +45,10 @@ export function PlanningMonthNav({
               href={planningPath(year, value)}
               aria-current={selected ? "page" : undefined}
               className={cn(
-                "shrink-0 rounded-full px-3 py-2 text-sm whitespace-nowrap",
-                selected ? "bg-primary text-primary-foreground" : "border border-border",
+                "inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-sm whitespace-nowrap transition-colors",
+                selected
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
               data-testid={`planning-month-${value}`}
             >

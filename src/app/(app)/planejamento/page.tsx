@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeader, PageShell } from "@/features/app/ui";
 import { PlanningBoard } from "@/features/planning/planning-board";
 import { PlanningMonthNav } from "@/features/planning/planning-month-nav";
 import { parsePlanningSearchParams } from "@/domain/planning";
@@ -45,14 +46,11 @@ export default async function PlanningPage({
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
-      <header className="space-y-4">
-        <div>
-          <h1 className="font-heading text-3xl tracking-tight">Planejamento</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{board.monthLabel}</p>
-        </div>
+    <PageShell width="wide" className="gap-6">
+      <div className="space-y-4">
+        <PageHeader title="Planejamento" description={board.monthLabel} />
         <PlanningMonthNav year={year} month={month} />
-      </header>
+      </div>
       <PlanningBoard
         board={board}
         today={today}
@@ -62,6 +60,6 @@ export default async function PlanningPage({
           members: members.map((member) => ({ userId: member.userId, name: member.name })),
         }}
       />
-    </div>
+    </PageShell>
   );
 }

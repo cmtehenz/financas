@@ -8,9 +8,7 @@ import { createDebtAction, payDebtInstallmentAction, updateDebtStatusAction } fr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none";
+import { fieldControlClassName } from "@/features/app/ui";
 
 export function DebtForm({
   categories,
@@ -55,7 +53,7 @@ export function DebtForm({
       <Field id="creditor" label="Credor" />
       <div className="space-y-2">
         <Label htmlFor="categoryId">Categoria</Label>
-        <select id="categoryId" name="categoryId" className={selectClassName} required>
+        <select id="categoryId" name="categoryId" className={fieldControlClassName} required>
           {categories
             .filter((category) => category.active && category.type === "EXPENSE" && category.kind === "DEBT")
             .map((category) => (
@@ -116,7 +114,7 @@ export function PayDebtForm({
 
   return (
     <form className="flex flex-wrap items-end gap-2" action={onSubmit}>
-      <select name="accountId" className={selectClassName} required>
+      <select name="accountId" className={fieldControlClassName} required>
         {accounts
           .filter((account) => account.active)
           .map((account) => (

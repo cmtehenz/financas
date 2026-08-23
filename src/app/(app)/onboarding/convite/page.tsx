@@ -38,12 +38,12 @@ export default async function OnboardingInvitePage() {
   return (
     <>
       <OnboardingStepper current="/onboarding/convite" />
-      <h1 className="font-heading mt-8 text-3xl tracking-tight">Convide sua esposa</h1>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+      <h1 className="text-page-title">Convide sua esposa</h1>
+      <p className="text-page-subtitle mt-2 max-w-lg">
         O link vale por sete dias e só pode ser usado uma vez. Você também pode pular
         e convidar depois nas configurações da Casa.
       </p>
-      <div className="mt-8">
+      <div className="surface p-5">
         <InviteForm
           canManage={active.membership.role === "OWNER"}
           pendingInvites={pendingInvites.map((invite) => ({

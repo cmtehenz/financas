@@ -11,11 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TRANSACTION_STATUS_LABELS, TRANSACTION_TYPE_LABELS } from "@/domain/transaction-types";
+import { fieldControlClassName } from "@/features/app/ui";
 import { cn } from "@/lib/utils";
 import { transactionFormSchema, type TransactionFormInput } from "@/lib/validations/ledger";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function TransactionForm({
   accounts,
@@ -122,7 +120,7 @@ export function TransactionForm({
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}accountId`}>{type === "TRANSFER" ? "Conta de origem" : "Conta"}</Label>
-        <select id={`${idPrefix}accountId`} className={selectClassName} {...form.register("accountId")}>
+        <select id={`${idPrefix}accountId`} className={fieldControlClassName} {...form.register("accountId")}>
           {accounts
             .filter((account) => account.active)
             .map((account) => (
@@ -138,7 +136,7 @@ export function TransactionForm({
           <Label htmlFor={`${idPrefix}destinationAccountId`}>Conta de destino</Label>
           <select
             id={`${idPrefix}destinationAccountId`}
-            className={selectClassName}
+            className={fieldControlClassName}
             {...form.register("destinationAccountId")}
           >
             <option value="">Selecione</option>
@@ -154,7 +152,7 @@ export function TransactionForm({
       ) : (
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}categoryId`}>Categoria</Label>
-          <select id={`${idPrefix}categoryId`} className={selectClassName} {...form.register("categoryId")}>
+          <select id={`${idPrefix}categoryId`} className={fieldControlClassName} {...form.register("categoryId")}>
             <option value="">Selecione</option>
             {visibleCategories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -167,7 +165,7 @@ export function TransactionForm({
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}assignedToUserId`}>Responsável</Label>
-        <select id={`${idPrefix}assignedToUserId`} className={selectClassName} {...form.register("assignedToUserId")}>
+        <select id={`${idPrefix}assignedToUserId`} className={fieldControlClassName} {...form.register("assignedToUserId")}>
           <option value="">Compartilhado</option>
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
@@ -192,7 +190,7 @@ export function TransactionForm({
 
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}status`}>Situação</Label>
-        <select id={`${idPrefix}status`} className={selectClassName} {...form.register("status")}>
+        <select id={`${idPrefix}status`} className={fieldControlClassName} {...form.register("status")}>
           {(["PLANNED", "PENDING", "PAID"] as const).map((status) => (
             <option key={status} value={status}>
               {TRANSACTION_STATUS_LABELS[status]}
@@ -202,7 +200,7 @@ export function TransactionForm({
       </div>
 
       {type !== "TRANSFER" && !transactionId ? (
-        <div className="space-y-3 rounded-2xl border border-border p-4">
+        <div className="surface space-y-3 p-4">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"

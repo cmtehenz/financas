@@ -21,12 +21,12 @@ export default async function OnboardingPage() {
   return (
     <>
       <OnboardingStepper current="/onboarding" />
-      <h1 className="font-heading mt-8 text-3xl tracking-tight">Crie a Casa</h1>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+      <h1 className="text-page-title">Crie a Casa</h1>
+      <p className="text-page-subtitle mt-2 max-w-lg">
         A Casa é o espaço compartilhado da família. Você entra como responsável e pode
         convidar sua esposa em seguida.
       </p>
-      <div className="mt-8">
+      <div className="surface mt-2 p-5">
         <CreateHouseholdForm defaultName="Casa Gustavo e Aline" />
       </div>
     </>

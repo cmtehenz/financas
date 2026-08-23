@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { DebtStatusButtons, PayDebtForm } from "@/features/debts/debt-forms";
+import { EmptyState, PageHeader, PageShell, SectionTitle, StatCard, StatusBadge } from "@/features/app/ui";
 import { formatBRL } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
 import { todayInSaoPaulo } from "@/lib/dates";
@@ -34,18 +35,21 @@ export default async function DebtDetailPage({ params }: { params: Promise<{ id:
   const estimated = Boolean(debt.annualInterestRateBasisPoints) || !debt.installmentAmountCents;
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
-      <header>
-        <h1 className="font-heading text-3xl tracking-tight">{debt.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {debt.creditor} · {debt.status}
-        </p>
-      </header>
+    <PageShell>
+      <PageHeader
+        title={debt.name}
+        description={
+          <span className="flex flex-wrap items-center gap-2">
+            <span>{debt.creditor}</span>
+            <StatusBadge tone={debt.status === "ACTIVE" ? "warning" : "neutral"}>{debt.status}</StatusBadge>
+          </span>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-3">
-        <Stat label="Saldo devedor" value={formatBRL(debt.outstandingBalanceCents)} testId="debt-outstanding" />
-        <Stat label="Original" value={formatBRL(debt.originalAmountCents)} />
-        <Stat label="Pagas" value={`${debt.paidInstallments}/${debt.totalInstallments ?? 0}`} />
+        <StatCard label="Saldo devedor" value={formatBRL(debt.outstandingBalanceCents)} testId="debt-outstanding" />
+        <StatCard label="Original" value={formatBRL(debt.originalAmountCents)} />
+        <StatCard label="Pagas" value={`${debt.paidInstallments}/${debt.totalInstallments ?? 0}`} />
       </section>
       {estimated ? (
         <p className="text-sm text-muted-foreground">
@@ -59,12 +63,19 @@ export default async function DebtDetailPage({ params }: { params: Promise<{ id:
       <DebtStatusButtons debtId={debt.id} />
 
       <section>
-        <h2 className="font-medium">Parcelas</h2>
+        <SectionTitle>Parcelas</SectionTitle>
         <ul className="mt-3 space-y-3">
           {installments.map((item) => (
-            <li key={item.id} className="space-y-2 rounded-2xl border border-border px-4 py-3">
-              <p>
-                {item.installmentNumber} · {item.dueDate} · {formatBRL(item.amountCents)} · {item.status}
+            <li key={item.id} className="surface space-y-2 px-4 py-3">
+              <p className="flex flex-wrap items-center gap-2">
+                <span>
+                  {item.installmentNumber} · {item.dueDate} · {formatBRL(item.amountCents)}
+                </span>
+                <StatusBadge
+                  tone={item.status === "PAID" ? "success" : item.status === "OVERDUE" ? "danger" : "warning"}
+                >
+                  {item.status}
+                </StatusBadge>
               </p>
               {item.status !== "PAID" && item.status !== "CANCELLED" ? (
                 <PayDebtForm debtId={debt.id} installmentId={item.id} accounts={accounts} />
@@ -75,30 +86,19 @@ export default async function DebtDetailPage({ params }: { params: Promise<{ id:
       </section>
 
       <section>
-        <h2 className="font-medium">Pagamentos</h2>
+        <SectionTitle>Pagamentos</SectionTitle>
         {paid.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">Nenhum pagamento ainda.</p>
+          <EmptyState className="mt-3">Nenhum pagamento ainda.</EmptyState>
         ) : (
           <ul className="mt-3 space-y-2">
             {paid.map((item) => (
-              <li key={item.id} className="rounded-2xl border border-border px-4 py-3 text-sm">
+              <li key={item.id} className="surface px-4 py-3 text-sm">
                 Parcela {item.installmentNumber} · {formatBRL(item.amountCents)}
               </li>
             ))}
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function Stat({ label, value, testId }: { label: string; value: string; testId?: string }) {
-  return (
-    <article className="rounded-2xl border border-border px-4 py-3">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-heading mt-1 text-2xl" data-testid={testId}>
-        {value}
-      </p>
-    </article>
+    </PageShell>
   );
 }

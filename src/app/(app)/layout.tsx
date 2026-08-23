@@ -10,8 +10,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const completed = Boolean(active?.household.onboardingCompletedAt);
 
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <AppHeader householdName={active?.household.name} />
+    <div className="flex min-h-full flex-1 flex-col bg-background">
+      <AppHeader householdName={active?.household.name} userName={session.user.name} />
       <div className="flex flex-1">
         {completed ? <AppSidebar /> : null}
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>

@@ -20,10 +20,10 @@ export function OnboardingStepper({ current }: { current: (typeof STEPS)[number]
           <li
             key={step.href}
             className={cn(
-              "rounded-full px-2 py-1 text-center",
+              "rounded-full px-2 py-2 text-center",
               active && "bg-primary text-primary-foreground",
               done && "bg-muted text-foreground",
-              !active && !done && "text-muted-foreground",
+              !active && !done && "border border-border text-muted-foreground",
             )}
           >
             {index + 1}. {step.label}

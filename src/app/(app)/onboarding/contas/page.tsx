@@ -34,29 +34,29 @@ export default async function OnboardingAccountsPage() {
   return (
     <>
       <OnboardingStepper current="/onboarding/contas" />
-      <h1 className="font-heading mt-8 text-3xl tracking-tight">Contas e saldos</h1>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+      <h1 className="text-page-title">Contas e saldos</h1>
+      <p className="text-page-subtitle mt-2 max-w-lg">
         Cadastre as contas manuais da Casa. O saldo inicial entra em centavos e será a
         base do número do início até existirem movimentações.
       </p>
       {accounts.length > 0 ? (
-        <ul className="mt-8 space-y-3">
+        <ul className="space-y-3">
           {accounts.map((account) => (
-            <li key={account.id} className="rounded-2xl border border-border bg-card px-4 py-3">
+            <li key={account.id} className="surface px-4 py-3">
               <p className="font-medium">{account.name}</p>
               <p className="text-sm text-muted-foreground">
                 {FINANCIAL_ACCOUNT_TYPE_LABELS[account.type as FinancialAccountType] ?? account.type}
                 {account.institutionName ? ` · ${account.institutionName}` : ""}
               </p>
-              <p className="mt-1 text-sm">{formatBRL(account.openingBalanceCents)}</p>
+              <p className="mt-1 text-money text-sm">{formatBRL(account.openingBalanceCents)}</p>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-8 text-sm text-muted-foreground">Nenhuma conta ainda. Cadastre a primeira.</p>
+        <p className="text-sm text-muted-foreground">Nenhuma conta ainda. Cadastre a primeira.</p>
       )}
-      <div className="mt-8 rounded-2xl border border-border bg-card p-5">
-        <h2 className="font-medium">Nova conta</h2>
+      <div className="surface p-5">
+        <h2 className="text-section-title">Nova conta</h2>
         <div className="mt-4">
           <AccountForm defaultDate={todayInSaoPaulo()} submitLabel="Adicionar conta" />
         </div>

@@ -33,11 +33,11 @@ export default async function OnboardingReviewPage() {
   return (
     <>
       <OnboardingStepper current="/onboarding/revisao" />
-      <h1 className="font-heading mt-8 text-3xl tracking-tight">Revise a Casa</h1>
-      <p className="mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+      <h1 className="text-page-title">Revise a Casa</h1>
+      <p className="text-page-subtitle mt-2 max-w-lg">
         Confira os dados antes de concluir. Nada aqui é valor fictício.
       </p>
-      <dl className="mt-8 space-y-4 rounded-2xl border border-border bg-card px-5 py-6">
+      <dl className="surface space-y-4 px-5 py-6">
         <div>
           <dt className="text-sm text-muted-foreground">Casa</dt>
           <dd className="mt-1 font-medium">{active.household.name}</dd>

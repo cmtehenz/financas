@@ -103,9 +103,11 @@ export default async function InvitePage({
 function InviteShell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-full w-full max-w-md flex-1 flex-col justify-center px-4 py-12">
-      <p className="text-sm text-muted-foreground">Financeiro Familiar</p>
-      <h1 className="font-heading mt-3 text-3xl tracking-tight">{title}</h1>
-      <div className="mt-4">{children}</div>
+      <div className="surface p-6">
+        <p className="text-sm text-muted-foreground">Financeiro Familiar</p>
+        <h1 className="text-page-title mt-3">{title}</h1>
+        <div className="mt-4">{children}</div>
+      </div>
     </div>
   );
 }

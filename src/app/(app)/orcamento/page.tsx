@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { EmptyState, PageHeader, PageShell, SectionTitle, StatCard, StatusBadge, Surface } from "@/features/app/ui";
 import { BudgetTotalsForm, CategoryLimitsForm } from "@/features/ledger/budget-forms";
 import { parseYearMonth, shiftYearMonth, todayInSaoPaulo } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
@@ -36,11 +37,11 @@ export default async function BudgetPage({
   const summary = await getMonthlySummary(household.id, year, month);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-8 px-4 py-8 sm:px-6">
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-3xl tracking-tight">Orçamento</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+    <PageShell>
+      <PageHeader
+        title="Orçamento"
+        description={
+          <>
             Mês {summary.monthKey} ·{" "}
             <Link href={`/planejamento?ano=${year}&mes=${month}`} className="underline">
               Planejamento
@@ -49,41 +50,33 @@ export default async function BudgetPage({
             <Link href="/dashboard" className="underline">
               Início
             </Link>
-          </p>
-        </div>
-        <div className="flex gap-3 text-sm">
-          <Link href={`/orcamento?mes=${shiftYearMonth(summary.monthKey, -1)}`} className="underline">
-            Anterior
-          </Link>
-          <Link href={`/orcamento?mes=${shiftYearMonth(summary.monthKey, 1)}`} className="underline">
-            Próximo
-          </Link>
-        </div>
-      </header>
+          </>
+        }
+        actions={
+          <div className="flex gap-3 text-sm">
+            <Link href={`/orcamento?mes=${shiftYearMonth(summary.monthKey, -1)}`} className="underline">
+              Anterior
+            </Link>
+            <Link href={`/orcamento?mes=${shiftYearMonth(summary.monthKey, 1)}`} className="underline">
+              Próximo
+            </Link>
+          </div>
+        }
+      />
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-2xl border border-border p-4">
-          <p className="text-sm text-muted-foreground">Renda prevista</p>
-          <p className="font-heading mt-1 text-2xl">{formatBRL(summary.budget?.expectedIncomeCents ?? BigInt(0))}</p>
-        </article>
-        <article className="rounded-2xl border border-border p-4">
-          <p className="text-sm text-muted-foreground">Investimento planejado</p>
-          <p className="font-heading mt-1 text-2xl" data-testid="planned-investment">
-            {formatBRL(summary.plannedInvestmentCents)}
-          </p>
-        </article>
-        <article className="rounded-2xl border border-border p-4">
-          <p className="text-sm text-muted-foreground">Realizado</p>
-          <p className="font-heading mt-1 text-2xl">{formatBRL(summary.paidExpenseCents)}</p>
-        </article>
-        <article className="rounded-2xl border border-border p-4">
-          <p className="text-sm text-muted-foreground">Disponível</p>
-          <p className="font-heading mt-1 text-2xl">{summary.availableLabel}</p>
-        </article>
+        <StatCard label="Renda prevista" value={formatBRL(summary.budget?.expectedIncomeCents ?? BigInt(0))} />
+        <StatCard
+          label="Investimento planejado"
+          value={formatBRL(summary.plannedInvestmentCents)}
+          testId="planned-investment"
+        />
+        <StatCard label="Realizado" value={formatBRL(summary.paidExpenseCents)} />
+        <StatCard label="Disponível" value={summary.availableLabel} />
       </section>
 
-      <section className="rounded-2xl border border-border p-5">
-        <h2 className="font-medium">Totais do mês</h2>
+      <Surface>
+        <SectionTitle>Totais do mês</SectionTitle>
         <div className="mt-4">
           <BudgetTotalsForm
             year={year}
@@ -92,30 +85,41 @@ export default async function BudgetPage({
             plannedInvestment={summary.plannedInvestmentCents}
           />
         </div>
-      </section>
+      </Surface>
 
-      <section className="rounded-2xl border border-border p-5">
-        <h2 className="font-medium">Limites por categoria</h2>
+      <Surface>
+        <SectionTitle>Limites por categoria</SectionTitle>
         <p className="mt-1 text-sm text-muted-foreground">
           Comprometido {formatBRL(summary.budgetUsedCents)} de {formatBRL(summary.budgetLimitCents)} ·{" "}
           {summary.budgetPercent}%
         </p>
-        <ul className="mt-4 space-y-3">
-          {summary.expenseByCategory.map((item) => (
-            <li key={item.categoryId} className="rounded-xl border border-border px-3 py-3 text-sm">
-              <div className="flex justify-between gap-3">
-                <span>{item.name}</span>
-                <span>
-                  {formatBRL(item.usedCents)} / {formatBRL(item.limitCents)}
-                </span>
-              </div>
-              <p className="mt-1 text-muted-foreground">
-                {item.percent}% utilizado · {ALERT_TEXT[item.alert]}
-                {item.alert === "over" ? " ⚠" : item.alert === "warning" ? " !" : " · ok"}
-              </p>
-            </li>
-          ))}
-        </ul>
+        {summary.expenseByCategory.length === 0 ? (
+          <EmptyState className="mt-4">Nenhuma categoria de despesa neste mês.</EmptyState>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {summary.expenseByCategory.map((item) => (
+              <li key={item.categoryId} className="rounded-xl border border-border px-3 py-3 text-sm">
+                <div className="flex justify-between gap-3">
+                  <span>{item.name}</span>
+                  <span className="text-money">
+                    {formatBRL(item.usedCents)} / {formatBRL(item.limitCents)}
+                  </span>
+                </div>
+                <p className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground">
+                  <StatusBadge
+                    tone={item.alert === "over" ? "danger" : item.alert === "warning" ? "warning" : "success"}
+                  >
+                    {ALERT_TEXT[item.alert]}
+                  </StatusBadge>
+                  <span>
+                    {item.percent}% utilizado
+                    {item.alert === "over" ? " ⚠" : item.alert === "warning" ? " !" : " · ok"}
+                  </span>
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="mt-6">
           <CategoryLimitsForm
             year={year}
@@ -127,7 +131,7 @@ export default async function BudgetPage({
             }))}
           />
         </div>
-      </section>
-    </div>
+      </Surface>
+    </PageShell>
   );
 }

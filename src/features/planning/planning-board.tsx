@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { EmptyState, MoneyText, StatCard, StatusBadge } from "@/features/app/ui";
 import { TransactionForm } from "@/features/ledger/transaction-form";
 import { planningPath } from "@/domain/planning";
 import { occurrenceDate } from "@/lib/dates";
@@ -36,13 +37,18 @@ export function PlanningBoard({
   return (
     <div className="space-y-6">
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" data-testid="planning-summary">
-        <SummaryCard label="Entradas previstas" value={board.totals.plannedIncomeLabel} testId="planning-planned-income" />
-        <SummaryCard label="Entradas recebidas" value={board.totals.receivedIncomeLabel} testId="planning-received-income" />
-        <SummaryCard label="Total de contas" value={board.totals.billsTotalLabel} testId="planning-bills-total" />
-        <SummaryCard label="Total já pago" value={board.totals.paidBillsLabel} testId="planning-paid-total" />
-        <SummaryCard label="Falta pagar" value={board.totals.remainingToPayLabel} testId="planning-remaining" />
-        <SummaryCard label="Saldo planejado do mês" value={board.totals.plannedBalanceLabel} testId="planning-planned-balance" />
-        <SummaryCard label="Saldo realmente disponível" value={board.totals.availableLabel} testId="planning-available" />
+        <StatCard label="Entradas previstas" value={board.totals.plannedIncomeLabel} testId="planning-planned-income" tone="success" />
+        <StatCard label="Entradas recebidas" value={board.totals.receivedIncomeLabel} testId="planning-received-income" tone="success" />
+        <StatCard label="Total de contas" value={board.totals.billsTotalLabel} testId="planning-bills-total" tone="danger" />
+        <StatCard label="Total já pago" value={board.totals.paidBillsLabel} testId="planning-paid-total" />
+        <StatCard label="Falta pagar" value={board.totals.remainingToPayLabel} testId="planning-remaining" tone="warning" />
+        <StatCard
+          label="Saldo planejado do mês"
+          value={board.totals.plannedBalanceLabel}
+          testId="planning-planned-balance"
+          tone={board.totals.plannedBalanceLabel.startsWith("-") ? "danger" : "default"}
+        />
+        <StatCard label="Saldo realmente disponível" value={board.totals.availableLabel} testId="planning-available" />
       </section>
 
       <p className="text-sm text-muted-foreground">
@@ -60,18 +66,18 @@ export function PlanningBoard({
       <PlanningCopyForm year={board.year} month={board.month} items={board.copyPreview} />
 
       {board.empty ? (
-        <p className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground" data-testid="planning-empty">
+        <EmptyState testId="planning-empty">
           Nenhum lançamento neste mês. Crie entradas, contas ou copie o mês anterior.
-        </p>
+        </EmptyState>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-8">
         <section className="space-y-4" data-testid="planning-incomes">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-heading text-2xl">Entradas</h2>
+            <h2 className="text-section-title">Entradas</h2>
             <p className="text-sm text-muted-foreground">Total {board.totals.plannedIncomeLabel}</p>
           </div>
-          <details className="rounded-2xl border border-border p-4">
+          <details className="surface p-4">
             <summary className="cursor-pointer text-sm font-medium">Criar entrada</summary>
             <div className="mt-4">
               <TransactionForm
@@ -88,20 +94,28 @@ export function PlanningBoard({
           {board.incomes.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma entrada neste mês.</p>
           ) : (
-            <ul className="space-y-3">
+            <div className="surface overflow-x-auto">
+              <div className="hidden min-w-[40rem] grid-cols-[minmax(0,1.4fr)_8rem_7rem_8rem] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:grid">
+                <span>Entrada</span>
+                <span>Responsável</span>
+                <span>Situação</span>
+                <span className="text-right">Valor</span>
+              </div>
+              <ul>
               {board.incomes.map((item) => (
-                <li key={item.id} className="rounded-2xl border border-border p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <li key={item.id} className="border-b border-border px-4 py-3 last:border-b-0 lg:min-w-[40rem]">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_8rem_7rem_8rem] lg:items-center">
                     <div>
                       <p className="font-medium">{item.description}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {item.expectedDateLabel} · {item.assigneeName} · {item.accountName}
+                        {item.expectedDateLabel} · {item.accountName}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-heading text-xl">{item.amountLabel}</p>
-                      <p className="text-sm">{item.statusLabel}</p>
-                    </div>
+                    <p className="hidden text-sm text-muted-foreground lg:block">{item.assigneeName}</p>
+                    <StatusBadge tone={statusTone(item.visualStatus)}>{item.statusLabel}</StatusBadge>
+                    <MoneyText className="text-lg lg:text-right" tone="success">
+                      {item.amountLabel}
+                    </MoneyText>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-3 text-sm">
                     <Link href={`/movimentacoes/${item.id}`} className="underline">
@@ -130,16 +144,17 @@ export function PlanningBoard({
                   </div>
                 </li>
               ))}
-            </ul>
+              </ul>
+            </div>
           )}
         </section>
 
         <section className="space-y-4" data-testid="planning-bills">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-heading text-2xl">Contas a pagar</h2>
+            <h2 className="text-section-title">Contas a pagar</h2>
             <p className="text-sm text-muted-foreground">Total {board.totals.billsTotalLabel}</p>
           </div>
-          <details className="rounded-2xl border border-border p-4">
+          <details className="surface p-4">
             <summary className="cursor-pointer text-sm font-medium">Criar conta</summary>
             <div className="mt-4">
               <TransactionForm
@@ -156,20 +171,30 @@ export function PlanningBoard({
           {board.bills.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhuma conta neste mês.</p>
           ) : (
-            <ul className="space-y-3">
+            <div className="surface overflow-x-auto">
+              <div className="hidden min-w-[48rem] grid-cols-[minmax(0,1.3fr)_6rem_8rem_7rem_8rem] gap-3 border-b border-border bg-muted/60 px-4 py-2.5 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:grid">
+                <span>Conta</span>
+                <span>Origem</span>
+                <span>Vencimento</span>
+                <span>Situação</span>
+                <span className="text-right">Valor</span>
+              </div>
+              <ul>
               {board.bills.map((item) => (
-                <li key={item.id} className="rounded-2xl border border-border p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
+                <li key={item.id} className="border-b border-border px-4 py-3 last:border-b-0 lg:min-w-[48rem]">
+                  <div className="grid gap-3 lg:grid-cols-[minmax(0,1.3fr)_6rem_8rem_7rem_8rem] lg:items-center">
                     <div>
                       <p className="font-medium">{item.description}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
+                      <p className="mt-1 text-sm text-muted-foreground lg:hidden">
                         {item.originLabel} · {item.dueDateLabel} · {item.assigneeName}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-heading text-xl">{item.amountLabel}</p>
-                      <p className="text-sm">{item.statusLabel}</p>
-                    </div>
+                    <p className="hidden text-sm text-muted-foreground lg:block">{item.originLabel}</p>
+                    <p className="hidden text-sm text-muted-foreground lg:block">{item.dueDateLabel}</p>
+                    <StatusBadge tone={statusTone(item.visualStatus)}>{item.statusLabel}</StatusBadge>
+                    <MoneyText className="text-lg lg:text-right" tone="danger">
+                      {item.amountLabel}
+                    </MoneyText>
                   </div>
                   {item.origin === "LEDGER" || item.origin === "RECURRING" || (item.origin === "INVESTMENT" && !item.id.startsWith("investment:")) ? (
                     <div className="mt-3 flex flex-wrap gap-3 text-sm">
@@ -234,7 +259,8 @@ export function PlanningBoard({
                   ) : null}
                 </li>
               ))}
-            </ul>
+              </ul>
+            </div>
           )}
         </section>
       </div>
@@ -242,21 +268,15 @@ export function PlanningBoard({
   );
 }
 
-function SummaryCard({
-  label,
-  value,
-  testId,
-}: {
-  label: string;
-  value: string;
-  testId: string;
-}) {
-  return (
-    <article className="rounded-2xl border border-border p-4">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-heading mt-1 text-2xl" data-testid={testId}>
-        {value}
-      </p>
-    </article>
-  );
+function statusTone(status: string) {
+  if (status === "PAGA") {
+    return "success" as const;
+  }
+  if (status === "VENCIDA" || status === "CANCELADA") {
+    return "danger" as const;
+  }
+  if (status === "A_DEFINIR" || status === "PENDENTE") {
+    return "warning" as const;
+  }
+  return "info" as const;
 }

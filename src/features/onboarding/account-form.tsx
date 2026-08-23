@@ -11,14 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FINANCIAL_ACCOUNT_TYPE_LABELS, FINANCIAL_ACCOUNT_TYPES } from "@/domain/account-types";
-import { cn } from "@/lib/utils";
+import { fieldControlClassName } from "@/features/app/ui";
 import {
   financialAccountFormSchema,
   type FinancialAccountInput,
 } from "@/lib/validations/household";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function AccountForm({
   defaultDate,
@@ -101,7 +98,7 @@ export function AccountForm({
           <Label htmlFor={`account-type-${accountId ?? "new"}`}>Tipo</Label>
           <select
             id={`account-type-${accountId ?? "new"}`}
-            className={cn(selectClassName)}
+            className={fieldControlClassName}
             {...form.register("type")}
           >
             {FINANCIAL_ACCOUNT_TYPES.map((type) => (

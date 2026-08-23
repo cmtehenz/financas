@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CATEGORY_KIND_LABELS, CATEGORY_KINDS } from "@/domain/transaction-types";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm";
+import { fieldControlClassName } from "@/features/app/ui";
 
 export function CategoryForm() {
   const router = useRouter();
@@ -43,11 +41,11 @@ export function CategoryForm() {
         <Input id="category-name" name="name" className="h-11" />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <select name="type" className={selectClassName} defaultValue="EXPENSE">
+        <select name="type" className={fieldControlClassName} defaultValue="EXPENSE">
           <option value="INCOME">Receita</option>
           <option value="EXPENSE">Despesa</option>
         </select>
-        <select name="kind" className={selectClassName} defaultValue="OTHER">
+        <select name="kind" className={fieldControlClassName} defaultValue="OTHER">
           {CATEGORY_KINDS.map((kind) => (
             <option key={kind} value={kind}>
               {CATEGORY_KIND_LABELS[kind]}

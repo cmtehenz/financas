@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PageHeader, PageShell, Surface } from "@/features/app/ui";
 import { CardPurchaseForm } from "@/features/cards/card-forms";
 import { todayInSaoPaulo } from "@/lib/dates";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -27,18 +28,17 @@ export default async function NewPurchasePage({ params }: { params: Promise<{ id
 
   if (!card.active) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6">
-        <h1 className="font-heading text-3xl tracking-tight">Nova compra</h1>
-        <p className="mt-4 text-sm">Cartão desativado não aceita novas compras.</p>
-      </div>
+      <PageShell width="narrow">
+        <PageHeader title="Nova compra" />
+        <p className="text-sm">Cartão desativado não aceita novas compras.</p>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6">
-      <h1 className="font-heading text-3xl tracking-tight">Nova compra</h1>
-      <p className="mt-2 text-sm text-muted-foreground">{card.name}</p>
-      <div className="mt-8">
+    <PageShell width="narrow">
+      <PageHeader title="Nova compra" description={card.name} />
+      <Surface>
         <CardPurchaseForm
           creditCardId={card.id}
           closingDay={card.closingDay}
@@ -47,7 +47,7 @@ export default async function NewPurchasePage({ params }: { params: Promise<{ id
           members={members}
           defaultDate={todayInSaoPaulo()}
         />
-      </div>
-    </div>
+      </Surface>
+    </PageShell>
   );
 }

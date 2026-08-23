@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { buttonVariants } from "@/components/ui/button";
+import { EmptyState, PageHeader, PageShell, StatusBadge } from "@/features/app/ui";
 import { monthlyReleaseAfterPayoff } from "@/domain/debts";
 import { formatBRL } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -17,34 +18,33 @@ export default async function DebtsPage() {
   const state = await householdDebtState(household.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-8 sm:px-6">
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-heading text-3xl tracking-tight">Dívidas</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Saldo devedor {formatBRL(state.outstandingCents)}
-          </p>
-        </div>
-        <Link href="/dividas/nova" className={cn(buttonVariants(), "h-11")}>
-          Nova dívida
-        </Link>
-      </header>
+    <PageShell>
+      <PageHeader
+        title="Dívidas"
+        description={`Saldo devedor ${formatBRL(state.outstandingCents)}`}
+        actions={
+          <Link href="/dividas/nova" className={cn(buttonVariants(), "h-11")}>
+            Nova dívida
+          </Link>
+        }
+      />
 
       {state.debts.length === 0 ? (
-        <p className="mt-10 text-sm text-muted-foreground">Nenhuma dívida cadastrada.</p>
+        <EmptyState>Nenhuma dívida cadastrada.</EmptyState>
       ) : (
-        <ul className="mt-6 space-y-3">
+        <ul className="space-y-3">
           {state.debts.map((debt) => {
             const next = state.installments
               .filter((item) => item.debtId === debt.id && (item.status === "PENDING" || item.status === "OVERDUE"))
               .sort((left, right) => left.dueDate.localeCompare(right.dueDate))[0];
             return (
-              <li key={debt.id} className="rounded-2xl border border-border p-4">
+              <li key={debt.id} className="surface p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium">{debt.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {debt.creditor} · {debt.status}
+                    <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>{debt.creditor}</span>
+                      <StatusBadge tone={debt.status === "ACTIVE" ? "warning" : "neutral"}>{debt.status}</StatusBadge>
                     </p>
                   </div>
                   <Link href={`/dividas/${debt.id}`} className="text-sm underline">
@@ -65,6 +65,6 @@ export default async function DebtsPage() {
           })}
         </ul>
       )}
-    </div>
+    </PageShell>
   );
 }

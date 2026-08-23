@@ -16,11 +16,9 @@ import { StatementPaymentForm } from "@/features/cards/card-forms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { fieldControlClassName } from "@/features/app/ui";
 import { formatCentsInput } from "@/lib/money";
 import type { PlanningCopyPreviewItem } from "@/services/planning";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none";
 
 type AccountOption = { id: string; name: string; active: boolean };
 
@@ -81,7 +79,7 @@ export function PlanningSettleForm({
 
   return (
     <form className="grid gap-2 sm:grid-cols-[1fr_8rem_8rem_auto]" action={onSubmit}>
-      <select name="accountId" className={selectClassName} defaultValue={defaultAccountId} required>
+      <select name="accountId" className={fieldControlClassName} defaultValue={defaultAccountId} required>
         {accounts
           .filter((account) => account.active)
           .map((account) => (
@@ -215,7 +213,7 @@ export function PlanningCopyForm({
   }
 
   return (
-    <details className="rounded-2xl border border-border p-4">
+    <details className="surface p-4">
       <summary className="cursor-pointer text-sm font-medium">Copiar planejamento do mês anterior</summary>
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">Nada elegível no mês anterior.</p>

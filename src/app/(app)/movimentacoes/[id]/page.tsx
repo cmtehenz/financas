@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PageHeader, PageShell, Surface } from "@/features/app/ui";
 import { TransactionForm } from "@/features/ledger/transaction-form";
 import { formatCentsInput } from "@/lib/money";
 import { requireCompletedHousehold } from "@/lib/require-household";
@@ -32,9 +33,9 @@ export default async function EditTransactionPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-8 sm:px-6">
-      <h1 className="font-heading text-3xl tracking-tight">Editar movimentação</h1>
-      <div className="mt-8">
+    <PageShell width="narrow">
+      <PageHeader title="Editar movimentação" />
+      <Surface>
         <TransactionForm
           accounts={accounts}
           categories={categories}
@@ -58,7 +59,7 @@ export default async function EditTransactionPage({
             notes: transaction.notes ?? "",
           }}
         />
-      </div>
-    </div>
+      </Surface>
+    </PageShell>
   );
 }

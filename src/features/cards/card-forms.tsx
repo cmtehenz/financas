@@ -16,11 +16,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { previewCardInstallments } from "@/domain/cards";
+import { fieldControlClassName } from "@/features/app/ui";
 import { formatBRL, formatCentsInput, toCents } from "@/lib/money";
 import { createId } from "@/lib/ids";
-
-const selectClassName =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none";
 
 export function CreditCardForm({
   members,
@@ -60,7 +58,7 @@ export function CreditCardForm({
       <Field id="issuer" label="Emissor" />
       <div className="space-y-2">
         <Label htmlFor="holderUserId">Titular</Label>
-        <select id="holderUserId" name="holderUserId" className={selectClassName} required>
+        <select id="holderUserId" name="holderUserId" className={fieldControlClassName} required>
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
               {member.name}
@@ -252,7 +250,7 @@ export function CardPurchaseForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="categoryId">Categoria</Label>
-        <select id="categoryId" name="categoryId" className={selectClassName} required>
+        <select id="categoryId" name="categoryId" className={fieldControlClassName} required>
           {categories
             .filter((category) => category.active && category.type === "EXPENSE")
             .map((category) => (
@@ -264,7 +262,7 @@ export function CardPurchaseForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="assignedToUserId">Responsável</Label>
-        <select id="assignedToUserId" name="assignedToUserId" className={selectClassName}>
+        <select id="assignedToUserId" name="assignedToUserId" className={fieldControlClassName}>
           <option value="">Compartilhado</option>
           {members.map((member) => (
             <option key={member.userId} value={member.userId}>
@@ -287,7 +285,7 @@ export function CardPurchaseForm({
       </div>
       <Field id="notes" label="Observação" />
       {preview.length > 0 ? (
-        <div className="rounded-2xl border border-border p-4 text-sm">
+        <div className="surface p-4 text-sm">
           <p className="font-medium">Prévia das parcelas</p>
           <ul className="mt-2 space-y-1">
             {preview.map((item) => (
@@ -352,7 +350,7 @@ export function StatementPaymentForm({
       <p className="text-sm text-muted-foreground">Saldo pendente {pendingLabel}</p>
       <div className="space-y-2">
         <Label htmlFor={`account-${statementId}`}>Conta</Label>
-        <select id={`account-${statementId}`} name="accountId" className={selectClassName} required>
+        <select id={`account-${statementId}`} name="accountId" className={fieldControlClassName} required>
           {accounts
             .filter((account) => account.active)
             .map((account) => (
