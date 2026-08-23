@@ -29,5 +29,13 @@ export function toPublicAuthError(error: unknown) {
     return "Muitas tentativas. Aguarde um momento e tente de novo.";
   }
 
+  if (
+    message.includes("invalid origin") ||
+    message.includes("trusted origin") ||
+    message.includes("invalid callback")
+  ) {
+    return "O endereço do site não está autorizado para login. Confira BETTER_AUTH_URL na Vercel.";
+  }
+
   return "Não foi possível concluir a operação. Tente novamente.";
 }

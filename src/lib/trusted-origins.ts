@@ -1,7 +1,28 @@
 const PROJECT_HOST_PREFIX = "financeiro-familiar";
 
+function hostnameOf(value: string) {
+  return value.replace(/^https?:\/\//, "").split("/")[0] ?? "";
+}
+
 function originFromUrl(value: string) {
   return new URL(value).origin;
+}
+
+function originFromHost(host: string) {
+  if (host.startsWith("http://") || host.startsWith("https://")) {
+    return originFromUrl(host);
+  }
+
+  return `https://${host}`;
+}
+
+function isLocalhostUrl(value: string) {
+  try {
+    const hostname = new URL(value).hostname;
+    return hostname === "localhost" || hostname === "127.0.0.1";
+  } catch {
+    return false;
+  }
 }
 
 export function isAllowedVercelHost(hostname: string, projectName = PROJECT_HOST_PREFIX) {
@@ -14,22 +35,48 @@ export function isAllowedVercelHost(hostname: string, projectName = PROJECT_HOST
 
 export function vercelDeploymentOrigin(env: Record<string, string | undefined> = process.env) {
   const host = env.VERCEL_URL;
-  if (!host || !isAllowedVercelHost(host, env.VERCEL_PROJECT_NAME ?? PROJECT_HOST_PREFIX)) {
+  if (!host) {
     return undefined;
   }
 
-  return `https://${host}`;
+  const hostname = hostnameOf(host);
+  if (!hostname.endsWith(".vercel.app")) {
+    return undefined;
+  }
+
+  return `https://${hostname}`;
+}
+
+export function productionDeploymentOrigin(env: Record<string, string | undefined> = process.env) {
+  const host = env.VERCEL_PROJECT_PRODUCTION_URL;
+  if (!host) {
+    return undefined;
+  }
+
+  try {
+    return originFromHost(host);
+  } catch {
+    return undefined;
+  }
 }
 
 export function getAppBaseUrl(
   configuredUrl?: string,
   env: Record<string, string | undefined> = process.env,
 ) {
+  const vercelOrigin = vercelDeploymentOrigin(env);
+  const productionOrigin = productionDeploymentOrigin(env);
+  const configuredIsLocal = !configuredUrl || isLocalhostUrl(configuredUrl);
+
   if (env.VERCEL_ENV === "preview") {
-    return vercelDeploymentOrigin(env) ?? configuredUrl ?? "http://localhost:3000";
+    return vercelOrigin ?? configuredUrl ?? "http://localhost:3000";
   }
 
-  return configuredUrl ?? vercelDeploymentOrigin(env) ?? "http://localhost:3000";
+  if (env.VERCEL_ENV === "production") {
+    return (configuredIsLocal ? undefined : configuredUrl) ?? productionOrigin ?? vercelOrigin ?? configuredUrl ?? "http://localhost:3000";
+  }
+
+  return configuredUrl ?? vercelOrigin ?? "http://localhost:3000";
 }
 
 export function getTrustedOrigins(
@@ -58,9 +105,9 @@ export function getTrustedOrigins(
     origins.add(vercelOrigin);
   }
 
-  const productionHost = env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (productionHost && isAllowedVercelHost(productionHost, env.VERCEL_PROJECT_NAME ?? PROJECT_HOST_PREFIX)) {
-    origins.add(`https://${productionHost}`);
+  const productionOrigin = productionDeploymentOrigin(env);
+  if (productionOrigin) {
+    origins.add(productionOrigin);
   }
 
   const extras = env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",") ?? [];
@@ -71,15 +118,7 @@ export function getTrustedOrigins(
     }
 
     try {
-      const origin = originFromUrl(trimmed);
-      const hostname = new URL(origin).hostname;
-      if (
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        isAllowedVercelHost(hostname, env.VERCEL_PROJECT_NAME ?? PROJECT_HOST_PREFIX)
-      ) {
-        origins.add(origin);
-      }
+      origins.add(originFromUrl(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`));
     } catch {
       // Skip invalid extra origins instead of widening trust.
     }

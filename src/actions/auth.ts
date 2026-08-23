@@ -35,6 +35,7 @@ export async function signUpAction(input: SignUpInput): Promise<ActionResult> {
 
     return { ok: true };
   } catch (error) {
+    console.error("auth.sign_up_failed", error instanceof Error ? error.message : "unknown");
     return { ok: false, error: toPublicAuthError(error) };
   }
 }
@@ -57,6 +58,7 @@ export async function signInAction(input: SignInInput): Promise<ActionResult> {
 
     return { ok: true };
   } catch (error) {
+    console.error("auth.sign_in_failed", error instanceof Error ? error.message : "unknown");
     return { ok: false, error: toPublicAuthError(error) };
   }
 }

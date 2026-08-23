@@ -76,7 +76,7 @@ O pnpm 11 exige permissão explícita para scripts de build. O `esbuild` está p
 ## Deploy
 
 1. Criar projeto no Neon e obter `DATABASE_URL`
-2. Configurar as variáveis na Vercel
+2. Configurar as variáveis na Vercel. `BETTER_AUTH_URL` e `NEXT_PUBLIC_APP_URL` precisam ser a URL pública de produção (`https://...`), nunca `http://localhost:3000`.
 3. Executar `pnpm db:migrate` de forma controlada
 4. Criar o projeto na Vercel
 5. Fazer deploy de preview
